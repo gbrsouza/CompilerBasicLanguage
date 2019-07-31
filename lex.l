@@ -129,6 +129,7 @@ int line = 1, column = 1;
 %} 
   
 /* Rules Section*/
+%option caseless
 %% 
 [ \t\r]								{return WHITE;}
 \n									{return ENDL;}
@@ -193,6 +194,7 @@ FN[A-Z]								{return FUNCTION;}
 \"[^\"\\]*(\\.[^\"\\]*)*\"			{return STRING;}
 \'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{return CHAR;}
 ;									{return SEMICOLON;}
+[A-Z|0-9]+							{return LEXERROR;}
 .									{return LEXERROR;}
 <<EOF>>								{return LEXEOF;}
 
