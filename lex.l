@@ -61,6 +61,7 @@ using namespace std;
 #define BOOL 56
 #define CHAR 57
 #define COMMA 58
+#define MOD 59
 
 map<char, string> trad = {{20, "ABS"},
 				{21, "ATN"},
@@ -119,7 +120,8 @@ map<char, string> trad = {{20, "ABS"},
 				{55, "FLOAT"},
 				{56, "BOOL"},
 				{57, "CHAR"},
-				{58, "COMMA"}
+				{58, "COMMA"},
+				{59, "MOD"},
 };
 
 int line = 1, column = 1;
@@ -171,6 +173,7 @@ TAN									{return TAN;}
 \-									{return MINUS;}
 \*									{return TIMES;}
 \/									{return DIVIDE;}
+\%									{return MOD;}
 \^									{return EXPONENTIAL;}
 >									{return GT;}
 \<									{return LT;}
