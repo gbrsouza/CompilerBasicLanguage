@@ -1,0 +1,29 @@
+1   DATA 10, 10, 20, 30, 40, 50, 60, 70, 80, 90
+2
+3   READ N
+4   DIM V(N)
+5   FOR I = 0 TO N-1
+6   READ V(I)
+7   NEXT I
+8
+9   LET L = 0
+10  LET R = N - 1
+11  DATA 60
+12  READ X
+13
+14  
+15  IF (L <= R) THEN 17
+16  GOTO 26
+17  LET M = L + INT((R - L)/2)
+18  IF (V(M) = X) THEN 28
+19  IF (V(M) < X) THEN 21
+20  IF (V(M) > X) THEN 23
+21  LET L = M + 1
+22  GOTO 15
+23  LET R = M - 1
+24  GOTO 15
+25
+26  PRINT -1
+27  GOTO 29
+28  PRINT M 
+29  END

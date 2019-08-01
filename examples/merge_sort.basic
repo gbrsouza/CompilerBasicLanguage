@@ -1,0 +1,54 @@
+1  DATA 10, 6, 2, 4, 3, 1, 7, 0, 9, 5, 8
+2  READ N
+3  DIM V(N)
+4  FOR I = 0 TO N-1
+5  READ V(I)
+6  NEXT I
+7 
+8  LET C = 1
+9  IF C >= N THEN 50
+10 FOR L = 0 TO N-2 STEP 2 * C
+11 LET M = L + C - 1
+12 IF M < N - 1 THEN 15
+13 LET M = N - 1
+14 
+15 LET R = L + 2 * C - 1
+16 IF R < N - 1 THEN 19
+17 LET R = N - 1
+18 
+19 GOSUB 24
+20 NEXT L
+21 LET C = 2 * C
+22 GOTO 9
+23 
+24 LET N1 = M - L + 1
+25 LET N2 = R - M
+26 DIM A(N1)
+27 DIM B(N2)
+28 FOR I = 0 TO N1 - 1 
+29 LET A(I) = V(L + I)
+30 NEXT I
+31 FOR I = 0 TO N2 - 1
+32 LET B(I) = V(M + 1 + I)
+33 NEXT I
+34 
+35 LET I = 0
+36 LET J = 0
+37 LET K = L
+38 
+39 IF I >= N1 AND J >= N2 THEN 49
+40 IF I < N1 AND (J >= N2 OR A(I) <= B(J)) THEN 45
+41 LET V(K) = A(I)
+42 LET I = I + 1
+43 LET K = K + 1
+44 GOTO 39
+45 LET V(K) = B(J)
+46 LET J = J + 1
+47 LET K = K + 1
+48 GOTO 39
+49 RETURN
+50 FOR I = 0 TO N - 1
+51 PRINT V(I) , " "
+52 PRINT "\n"
+53 NEXT I
+54 END
