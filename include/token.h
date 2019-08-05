@@ -66,6 +66,6 @@ enum token {
 	WHITE		= 59,
 };
 
-token nextToken();
+token next_token();
 
 #endif

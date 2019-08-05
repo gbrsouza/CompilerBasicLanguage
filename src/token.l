@@ -83,7 +83,7 @@ int yywrap(void){
 	return 1;
 }
 
-token nextToken(){
+token next_token(){
 	token tok = (token) yylex();
 	line = next_line;
 	column = next_column;
