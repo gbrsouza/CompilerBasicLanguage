@@ -54,53 +54,53 @@
 <variable_list2>        ::=     , <variable_list>
                               | LAMBDA
 
-<expr>                  ::=     <orExp>
+<expr>                  ::=     <or_exp>
 
-<orExp>                 ::=     <andExp> <orExp2>
+<or_exp>                ::=     <and_exp> <or_exp2>
 
-<orExp2>                ::=     OR <orExp>
+<or_exp2>               ::=     OR <or_exp>
                               | LAMBDA
 
-<andExp>                ::=    <relExp> <andExp2>
+<and_exp>               ::=    <rel_exp> <and_exp2>
 
-<andExp2>               ::=    AND <andExp>
+<and_exp2>              ::=    AND <and_exp>
                               | LAMBDA
 
-<relExp>                ::=     <sumExp> <relExp2>
+<rel_exp>               ::=     <sum_exp> <rel_exp2>
 
-<relExp2>               ::=     <relOp> <sumExp>
+<rel_exp2>              ::=     <rel_op> <sum_exp>
                               | LAMBDA
 
-<sumExp>                ::=     <prodExp> <sumExp2>
+<sum_exp>               ::=     <prod_exp> <sum_exp2>
 
-<sumExp2>               ::=     + <sumExp>
-                              | - <sumExp>
+<sum_exp2>              ::=     + <sum_exp>
+                              | - <sum_exp>
                               | LAMBDA
 
-<prodExp>               ::=     <expoExp> <prodExp2>
+<prod_exp>              ::=     <expo_exp> <prod_exp2>
 
-<prodExp2>              ::=     * <prodExp>
-                              | / <prodExp>
-                              | % <prodExp>
+<prod_exp2>             ::=     * <prod_exp>
+                              | / <prod_exp>
+                              | % <prod_exp>
                               | LAMBDA
 
-<expoExp>               ::=     <unaryExp> <expoExp2> 
+<expo_exp>              ::=     <unary_exp> <expo_exp2>
 
-<expoExp2>              ::=     ^ <expoExp>
+<expo_exp2>             ::=     ^ <expo_exp>
                               | LAMBDA
 
-<unaryExp>              ::=     INTEGER
+<unary_exp>             ::=     INTEGER
                               | FLOAT
                               | <var>
                               | STRING
                               | CHAR
                               | BOOLEAN
-                              | <unaryOp> <unaryExp>
+                              | <unary_op> <unary_exp>
                               | ( <expr> )
                               | FUNCTION ( <expr> )
                               | <native_function> ( <expr> )
 
-<relOp>                 ::=     <> | = | < | > | <= | >=
+<rel_op>                ::=     <> | = | < | > | <= | >=
 
 <var>                   ::=     VARIABLE <variable2>
 
@@ -110,7 +110,7 @@
 <idx2>                  ::=     , <expr>
                               | LAMBDA
 
-<unaryOp>               ::=     - | + | NOT
+<unary_op>              ::=     - | + | NOT
 
 <native_function>       ::=     ABS | ATN | COS | EXP | INT
                               | LOG | RND | SIN | SQR | TAN

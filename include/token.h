@@ -8,7 +8,7 @@ enum token {
 	ABS			=  1,
 	AND			=  2,
 	ATN			=  3,
-	BOOL		=  4,
+	BOOLEAN		=  4,
 	CHAR		=  5,
 	COMMA		=  6,
 	COMMENT		=  7,
