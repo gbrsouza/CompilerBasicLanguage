@@ -15,8 +15,8 @@ DEL = rm
 EXEC = Compiler
 
 ### executable target
-main: lex bin token.o main.o
-	$(CXX) $(BINDIR)token.o $(BINDIR)main.o -o $(EXEC) $(OPTIONSCXX)
+main: lex bin token.o parser.o main.o
+	$(CXX) $(BINDIR)token.o $(BINDIR)parser.o $(BINDIR)main.o -o $(EXEC) $(OPTIONSCXX)
 
 lex:
 	lex -o $(SRCDIR)token.cpp $(SRCDIR)token.l
@@ -30,6 +30,7 @@ bin:
 
 main.o: $(SRCDIR)main.cpp
 token.o: $(SRCDIR)token.cpp
+parser.o: $(SRCDIR)parser.cpp
 
 ### clear objects & executable
 clean: bin

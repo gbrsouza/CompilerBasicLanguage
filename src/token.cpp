@@ -1002,12 +1002,12 @@ YY_RULE_SETUP
 case 25:
 YY_RULE_SETUP
 #line 37 "./src/token.l"
-{return BOOL;}
+{return BOOLEAN;}
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
 #line 38 "./src/token.l"
-{return BOOL;}
+{return BOOLEAN;}
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
@@ -2199,7 +2199,7 @@ int yywrap(void){
 	return 1;
 }
 
-token nextToken(){
+token next_token(){
 	token tok = (token) yylex();
 	line = next_line;
 	column = next_column;

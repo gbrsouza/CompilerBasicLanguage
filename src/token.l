@@ -34,8 +34,8 @@ DEF									{return DEF;}
 DIM									{return DIM;}
 STOP								{return STOP;}
 THEN								{return THEN;}
-TRUE								{return BOOL;}
-FALSE								{return BOOL;}
+TRUE								{return BOOLEAN;}
+FALSE								{return BOOLEAN;}
 
 ABS									{return ABS;}
 ATN									{return ATN;}
@@ -83,7 +83,7 @@ int yywrap(void){
 	return 1;
 }
 
-token nextToken(){
+token next_token(){
 	token tok = (token) yylex();
 	line = next_line;
 	column = next_column;

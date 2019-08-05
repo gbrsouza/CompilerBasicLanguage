@@ -2,18 +2,20 @@
 #include <map>
 #include <string>
 
+#include "parser.h"
+#include "symbol.h"
 #include "token.h"
 
 using std::cout;
 using std::endl;
-using std::string;
 using std::map;
+using std::string;
 
-map<token, string> trad = {
+map<token, string> token_name = {
 	{ABS, "ABS"},
 	{AND, "AND"},
 	{ATN, "ATN"},
-	{BOOL, "BOOL"},
+	{BOOLEAN, "BOOLEAN"},
 	{CHAR, "CHAR"},
 	{COMMA, "COMMA"},
 	{COMMENT, "COMMENT"},
@@ -71,14 +73,14 @@ map<token, string> trad = {
 	{WHITE, "WHITE"},
 };
 
-int main(){
+void run_lexical(){
 	token cur;
-	while((cur = nextToken()) != LEXEOF) {
+	while((cur = next_token()) != LEXEOF) {
 		if(cur == WHITE){
 			continue;
 		}
 		
-		cout << "TokenId: " << trad[cur] << endl;
+		cout << "TokenId: " << token_name[cur] << endl;
 		cout << "Line: " << line << endl;
 		cout << "Column: " << column << endl;
 		if(cur == FLOAT || cur == INTEGER || cur == FUNCTION || cur == VARIABLE || 
@@ -88,4 +90,9 @@ int main(){
 		
 		cout << endl;
 	}
+}
+
+int main(){
+	init_parser();
+	run_recursive_parser();
 }
