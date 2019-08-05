@@ -94,4 +94,5 @@ void run_lexical(){
 
 int main(){
 	init_parser();
+	run_recursive_parser();
 }

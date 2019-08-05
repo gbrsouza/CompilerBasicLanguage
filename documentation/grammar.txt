@@ -3,7 +3,7 @@
 <blocks>                ::=     ENDL <blocks>
                               | INTEGER <numerated_main>
 
-<numerated_main>        ::=     END EOF
+<numerated_main>        ::=     END ENDL EOF
                               | <numerated_block> <blocks>
 
 <numerated_block>       ::=     ENDL

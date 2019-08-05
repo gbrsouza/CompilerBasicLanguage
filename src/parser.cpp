@@ -11,14 +11,18 @@
 #include "token.h"
 
 using std::cin;
+using std::cout;
 using std::map;
 using std::set;
 using std::string;
 using std::vector;
 
+extern int line, column;
+extern char * text;
+
 map<symbol, vector<vector<symbol> > > rules;
 map<symbol, bool> nullable, endable;
-map<symbol, set<symbol> > follow, first;
+map<symbol, set<token> > follow, first;
 
 map<string, symbol> to_symbol = {
 	{"ABS", T_ABS},
@@ -118,6 +122,8 @@ map<string, symbol> to_symbol = {
 	{"<variable_list2>", VARIABLE_LIST2},
 };
 
+map<symbol, string> to_string;
+
 void build_sets(){
 	std::ifstream in("documentation/table.txt");
 	std::streambuf *cinbuf = cin.rdbuf(); //save old buf
@@ -134,14 +140,14 @@ void build_sets(){
 		string s;
 		cin >> s;
 		assert(s == "|");
-		set<symbol> fst, flw;
+		set<token> fst, flw;
 		while((cin >> s) && s != "|"){
-			assert(to_symbol.count(s));
-			fst.insert(to_symbol[s]);
+			assert(to_symbol.count(s) && to_symbol[s] > 0);
+			fst.insert((token)to_symbol[s]);
 		}
 		while((cin >> s) && s != "|"){
-			assert(to_symbol.count(s));
-			flw.insert(to_symbol[s]);
+			assert(to_symbol.count(s) && to_symbol[s] > 0);
+			flw.insert((token)to_symbol[s]);
 		}
 		first[cur] = fst;
 		follow[cur] = flw;
@@ -208,12 +214,67 @@ void read_grammar(){
 }
 
 void init_parser(){
+    for(auto it : to_symbol){
+        to_string[it.second] = it.first;
+    }
 	build_sets();
 	read_grammar();
 }
 
+token nxt;
+
+token next_useful_token(){
+    token tok = next_token();
+    while(tok == WHITE || tok == COMMENT){
+        tok = next_token();
+    }
+    if(tok == LEXERROR){
+        cout << "Lexical error!\n";
+        cout << "line: " << line << "\n";
+        cout << "column: " << column << "\n";
+        cout << "text: " << text << "\n";
+        exit(0);
+    }
+    return tok;
+}
+
+void run_recursive_parser(symbol sym){
+    for(auto & rule : rules[sym]){
+        if(rule.empty()){
+            return;
+        }
+        if(rule[0] == (symbol) nxt || (rule[0] < 0 && first[rule[0]].count(nxt))
+            || (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(nxt)) ){
+            
+            for(int i = 0; i < (int)rule.size(); i++){
+                if(rule[i] < 0){
+                    run_recursive_parser(rule[i]);
+                }
+                else{
+                    if((token) rule[i] != nxt){
+                        cout << "Syntax error!\n";
+                        cout << "line: " << line << "\n";
+                        cout << "column: " << column << "\n";
+                        cout << "text: " << text << "\n";
+                        cout << "expected token id: " << to_string[rule[i]] << "\n";
+                        cout << "actual token id: " << to_string[(symbol) nxt] << "\n";
+                        exit(0);
+                    }
+                    else{
+                        // match
+                        nxt = next_useful_token();
+                    }
+                }
+            }
+            
+            return;
+        }
+    }
+}
+
 void run_recursive_parser(){
-    next_token();
+    nxt = next_useful_token();
+    run_recursive_parser(PROGRAM);
 }
 
 void run_parser_with_table(){
