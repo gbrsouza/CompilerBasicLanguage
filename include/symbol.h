@@ -98,6 +98,7 @@ enum symbol {
 	VARIABLE_LIST	= -35,
 	VAR				= -36,
 	VARIABLE_LIST2	= -37,
+	EMPTY_LINES     = -38,
 };
 
 #endif

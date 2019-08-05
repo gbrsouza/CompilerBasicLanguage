@@ -120,6 +120,7 @@ map<string, symbol> to_symbol = {
 	{"<variable_list>", VARIABLE_LIST},
 	{"<var>", VAR},
 	{"<variable_list2>", VARIABLE_LIST2},
+	{"<empty_lines>", EMPTY_LINES},
 };
 
 map<symbol, string> to_string;

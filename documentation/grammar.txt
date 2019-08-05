@@ -3,8 +3,11 @@
 <blocks>                ::=     ENDL <blocks>
                               | INTEGER <numerated_main>
 
-<numerated_main>        ::=     END ENDL EOF
+<numerated_main>        ::=     END ENDL <empty_lines> EOF
                               | <numerated_block> <blocks>
+
+<empty_lines>           ::=     ENDL <empty_lines>
+                              | LAMBDA
 
 <numerated_block>       ::=     ENDL
                               | <forblock>

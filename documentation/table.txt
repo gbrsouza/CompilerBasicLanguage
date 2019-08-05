@@ -36,3 +36,4 @@
 <variable_list> | VARIABLE | ENDL | no | no |
 <var> | VARIABLE | + - <> < > <= >= * / % OR = STEP ; TO ENDL THEN , ) ^ AND | no | no |
 <variable_list2> | , | ENDL | yes | no |
+<empty_lines> | ENDL | EOF | yes | no |
