@@ -1,0 +1,116 @@
+<program>               ::=     <blocks>
+
+<blocks>                ::=     ENDL <blocks>
+                              | INTEGER <numerated_main>
+
+<numerated_main>        ::=     END EOF
+                              | <numerated_block> <blocks>
+
+<numerated_block>       ::=     ENDL
+                              | <forblock>
+                              | <stmt> ENDL
+
+<forblock>              ::=     <forinit> <forstep> <forbody>
+
+<forinit>               ::=     FOR <var> = <expr> TO <expr>
+
+<forstep>               ::=     STEP <expr> ENDL
+                              | ENDL
+
+<forbody>               ::=     ENDL <forbody>
+                              | INTEGER <numerated_for>
+
+<numerated_for>         ::=     <fornext> ENDL
+                              | <numerated_block> <forbody>
+
+<fornext>               ::=     NEXT <var>
+
+<stmt>                  ::=     LET <var> = <expr>
+                              | PRINT <expr_list>
+                              | READ  <variable_list>
+                              | DATA  <num_list>
+                              | GOTO INTEGER
+                              | IF <expr> THEN INTEGER
+                              | GOSUB INTEGER
+                              | RETURN
+                              | DEF FUNCTION ( VARIABLE ) = <expr>
+                              | DIM <var>
+                              | STOP
+
+<num_list>              ::=    INTEGER <num_list2>
+                              | FLOAT <num_list2>
+
+<num_list2>             ::=    , <num_list>
+                              | LAMBDA
+
+<expr_list>             ::=     <expr> <expr_list2>
+
+<expr_list2>            ::=     , <expr_list>
+                              | ; <expr_list>
+                              | LAMBDA
+
+<variable_list>         ::=     <var> <variable_list2>
+
+<variable_list2>        ::=     , <variable_list>
+                              | LAMBDA
+
+<expr>                  ::=     <orExp>
+
+<orExp>                 ::=     <andExp> <orExp2>
+
+<orExp2>                ::=     OR <orExp>
+                              | LAMBDA
+
+<andExp>                ::=    <relExp> <andExp2>
+
+<andExp2>               ::=    AND <andExp>
+                              | LAMBDA
+
+<relExp>                ::=     <sumExp> <relExp2>
+
+<relExp2>               ::=     <relOp> <sumExp>
+                              | LAMBDA
+
+<sumExp>                ::=     <prodExp> <sumExp2>
+
+<sumExp2>               ::=     + <sumExp>
+                              | - <sumExp>
+                              | LAMBDA
+
+<prodExp>               ::=     <expoExp> <prodExp2>
+
+<prodExp2>              ::=     * <prodExp>
+                              | / <prodExp>
+                              | % <prodExp>
+                              | LAMBDA
+
+<expoExp>               ::=     <unaryExp> <expoExp2> 
+
+<expoExp2>              ::=     ^ <expoExp>
+                              | LAMBDA
+
+<unaryExp>              ::=     INTEGER
+                              | FLOAT
+                              | <var>
+                              | STRING
+                              | CHAR
+                              | BOOLEAN
+                              | <unaryOp> <unaryExp>
+                              | ( <expr> )
+                              | FUNCTION ( <expr> )
+                              | <native_function> ( <expr> )
+
+<relOp>                 ::=     <> | = | < | > | <= | >=
+
+<var>                   ::=     VARIABLE <variable2>
+
+<variable2>             ::=     ( <expr> <idx2> )
+                              | LAMBDA
+
+<idx2>                  ::=     , <expr>
+                              | LAMBDA
+
+<unaryOp>               ::=     - | + | NOT
+
+<native_function>       ::=     ABS | ATN | COS | EXP | INT
+                              | LOG | RND | SIN | SQR | TAN
