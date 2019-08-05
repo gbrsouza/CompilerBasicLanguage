@@ -192,8 +192,10 @@ void read_grammar(){
 		symbol cur = to_symbol[input[p-1]];
 		rules[cur] = vector<vector<symbol> >(0);
 		vector<symbol> rule;
+		bool has_lambda = false;
 		for(int j = p + 1; j < end; j++){
 		    if(input[j] == "LAMBDA"){
+		        has_lambda = true;
 		        continue;
 	        }
 			if(input[j] != "|"){
@@ -205,7 +207,7 @@ void read_grammar(){
 				rule.clear();
 			}
 		}
-		if(!rule.empty()){
+		if(!rule.empty() || has_lambda){
 		    rules[cur].push_back(rule);
 	    }
 	}
@@ -220,8 +222,6 @@ void init_parser(){
 	build_sets();
 	read_grammar();
 }
-
-token nxt;
 
 token next_useful_token(){
     token tok = next_token();
@@ -238,7 +238,7 @@ token next_useful_token(){
     return tok;
 }
 
-void run_recursive_parser(symbol sym){
+void run_recursive_parser(symbol sym, token& nxt){
     for(auto & rule : rules[sym]){
         if(rule.empty()){
             return;
@@ -248,7 +248,7 @@ void run_recursive_parser(symbol sym){
             
             for(int i = 0; i < (int)rule.size(); i++){
                 if(rule[i] < 0){
-                    run_recursive_parser(rule[i]);
+                    run_recursive_parser(rule[i], nxt);
                 }
                 else{
                     if((token) rule[i] != nxt){
@@ -281,8 +281,8 @@ void run_recursive_parser(symbol sym){
 }
 
 void run_recursive_parser(){
-    nxt = next_useful_token();
-    run_recursive_parser(PROGRAM);
+    token nxt_token = next_useful_token();
+    run_recursive_parser(PROGRAM, nxt_token);
 }
 
 void run_parser_with_table(){
