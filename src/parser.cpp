@@ -270,6 +270,14 @@ void run_recursive_parser(symbol sym){
             return;
         }
     }
+    
+    cout << "Syntax error!\n";
+    cout << "Couldn't derive any expression from non-terminal symbol " << to_string[sym] << "\n";
+    cout << "line: " << line << "\n";
+    cout << "column: " << column << "\n";
+    cout << "text: " << text << "\n";
+    cout << "token id: " << to_string[(symbol) nxt] << "\n";
+    exit(0);
 }
 
 void run_recursive_parser(){
