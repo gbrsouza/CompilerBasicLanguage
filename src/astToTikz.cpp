@@ -17,6 +17,15 @@ using std::vector;
 using std::deque;
 using std::map;
 
+struct Node {
+	Node* father;
+	vector<Node*> children;
+	symbol sym;
+	string lexeme;
+	
+	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
+};
+
 map<symbol, string> symbol_to_string = {
 	{T_ABS, "ABS"},
 	{T_AND, "AND"},
@@ -125,38 +134,6 @@ struct Node{
 		sym(s), lexeme(l)
 	{
 		children = vector<Node*>();
-	}
-};
-
-struct TikzNodeDef{
-	//								 nodeType			nodeId			 	positioning			  nodeContent
-	// sample node definition: \node[roundnode]        (uppercircle)       [above=of maintopic]  {     1     };
-	string nodeType;
-	string nodeId;
-	string positioning;
-	string nodeContent;
-	TikzNodeDef(string nt, string nid, string p, string nc) : 
-		nodeType(nt), 
-		nodeId(nid), 
-		positioning(p), 
-		nodeContent(nc)
-	{
-	}
-};
-
-struct TikzEdgeDef{
-	//									  idFirst     regionFirst	   idSecond  regionSecond
-	// sample edge definition: \draw[->] (uppercircle.south)   --     (maintopic.north);
-	string idFirst;
-	string regionFirst;
-	string idSecond;
-	string regionSecond;
-	TikzEdgeDef(string i1, string r1, string i2, string r2) : 
-		idFirst(i1), 
-		regionFirst(r1), 
-		idSecond(i2), 
-		regionSecond(r2)
-	{
 	}
 };
 

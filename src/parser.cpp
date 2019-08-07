@@ -125,6 +125,61 @@ map<string, symbol> string_to_symbol = {
 
 map<symbol, string> symbol_to_string;
 
+string convertToLatex(string s){
+	string ret = "";
+	for(int i = 0; i < s.size(); i++){
+		if(s[i] == '_'){
+			ret += "\\textunderscore ";
+		}
+		else if(s[i] == '<'){
+			ret += "$<$";
+		}
+		else if(s[i] == '>'){
+			ret += "$>$";
+		}
+		else{
+			ret += s[i];
+		}
+	}
+	return ret;
+}
+
+struct Node {
+	Node* father;
+	vector<Node*> children;
+	symbol sym;
+	string lexeme;
+	
+	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
+};
+
+string createTikzTree(Node *root, int depth=0){
+	if(root == NULL) return "";
+	string ret = "";
+	if(depth == 0){
+		string s = (root->lexeme == "" ? symbol_to_string[root->sym] : root->lexeme);
+		ret += "\\node{" + convertToLatex(s) + "}";
+		for(auto child : root->children){
+			ret += "child {";
+			ret += createTikzTree(child, depth+1);
+			ret += "}";
+		}
+	}
+	else{
+		//for(int i = 0; i < depth; i++) ret += "\t";
+		string s = (root->lexeme == "" ? symbol_to_string[root->sym] : root->lexeme);
+		ret += "node{" + convertToLatex(s) + "}";
+		for(auto child : root->children){
+			//for(int i = 0; i < depth; i++) ret += "\t";
+			ret += "child {";
+			ret += createTikzTree(child, depth+1);
+			//for(int i = 0; i < depth; i++) ret += "\t";
+			ret += "}";
+		}
+	}
+	return ret;
+}
+
 void build_sets(){
 	std::ifstream in("documentation/table.txt");
 	std::streambuf *cinbuf = cin.rdbuf(); //save old buf
@@ -239,18 +294,9 @@ token next_useful_token(){
     return tok;
 }
 
-struct Node {
-	Node* father;
-	vector<Node*> children;
-	symbol sym;
-	string lexeme;
-	
-	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
-}
-
 void link(Node* father, Node* child){
-	father.children.push_back(child);
-	child.father = father;
+	father->children.push_back(child);
+	child->father = father;
 }
 
 Node* get_terminal_node(token nxt){
@@ -315,7 +361,7 @@ Node* run_recursive_parser(symbol sym, token& nxt){
                 }
             }
             
-            return;
+            return root;
         }
     }
     
@@ -358,7 +404,7 @@ void compress_tree(Node* node){
 		should_be_compressed = true;
 	}
 	if(should_be_compressed){
-		node.father = NULL;
+		node->father = NULL;
 	}
 }
 
@@ -370,14 +416,14 @@ void update_children(Node* node){
 		update_children(child);
 	}
 	if(node->sym < 0 && node->children.empty()){
-		node.father = NULL;
+		node->father = NULL;
 	}
 	
-	if(node.father == NULL){
+	if(node->father == NULL){
 		delete node;
 	}
 	else{
-		node.father.children.push_back(node);
+		node->father->children.push_back(node);
 	}
 }
 
@@ -388,11 +434,11 @@ void build_abstract_tree(Node* node){
 void run_recursive_parser(){
     token nxt_token = next_useful_token();
     Node* tree = run_recursive_parser(PROGRAM, nxt_token);
+    cout << createTikzTree(tree) << "\n";
+    //compress_tree(tree);
+    //update_children(tree);
     
-    compress_tree(tree);
-    update_children(tree);
-    
-    build_abstract_tree(tree);
+    //build_abstract_tree(tree);
 }
 
 void run_parser_with_table(){
