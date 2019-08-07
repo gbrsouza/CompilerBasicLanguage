@@ -184,21 +184,21 @@ void read_grammar(){
 	for(int i = 0; i < (int)ids.size(); i++){
 		int p = ids[i], end;
 		if(i + 1 == (int) ids.size()){
-		    end = (int) input.size();
-	    }
+			end = (int) input.size();
+		}
 		else{
-		    end = ids[i+1] - 1;
-	    }
+			end = ids[i+1] - 1;
+		}
 		assert(string_to_symbol.count(input[p-1]));
 		symbol cur = string_to_symbol[input[p-1]];
 		rules[cur] = vector<vector<symbol> >(0);
 		vector<symbol> rule;
 		bool has_lambda = false;
 		for(int j = p + 1; j < end; j++){
-		    if(input[j] == "LAMBDA"){
-		        has_lambda = true;
-		        continue;
-	        }
+			if(input[j] == "LAMBDA"){
+				has_lambda = true;
+				continue;
+			}
 			if(input[j] != "|"){
 				assert(string_to_symbol.count(input[j]));
 				rule.push_back(string_to_symbol[input[j]]);
@@ -209,34 +209,34 @@ void read_grammar(){
 			}
 		}
 		if(!rule.empty() || has_lambda){
-		    rules[cur].push_back(rule);
-	    }
+			rules[cur].push_back(rule);
+		}
 	}
 	
 	cin.rdbuf(cinbuf);
 }
 
 void init_parser(){
-    for(auto it : string_to_symbol){
-        symbol_to_string[it.second] = it.first;
-    }
+	for(auto it : string_to_symbol){
+		symbol_to_string[it.second] = it.first;
+	}
 	build_sets();
 	read_grammar();
 }
 
 token next_useful_token(){
-    token tok = next_token();
-    while(tok == WHITE || tok == COMMENT){
-        tok = next_token();
-    }
-    if(tok == LEXERROR){
-        cout << "Lexical error!\n";
-        cout << "line: " << line << "\n";
-        cout << "column: " << column << "\n";
-        cout << "text: " << text << "\n";
-        exit(0);
-    }
-    return tok;
+	token tok = next_token();
+	while(tok == WHITE || tok == COMMENT){
+		tok = next_token();
+	}
+	if(tok == LEXERROR){
+		cout << "Lexical error!\n";
+		cout << "line: " << line << "\n";
+		cout << "column: " << column << "\n";
+		cout << "text: " << text << "\n";
+		exit(0);
+	}
+	return tok;
 }
 
 struct Node {
@@ -246,16 +246,18 @@ struct Node {
 	string lexeme;
 	
 	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
-}
+};
 
 void link(Node* father, Node* child){
-	father.children.push_back(child);
-	child.father = father;
+	if(father != NULL){
+		father->children.push_back(child);
+	}
+	child->father = father;
 }
 
 Node* get_terminal_node(token nxt){
 	string lexeme = "";
-    switch(nxt){
+	switch(nxt){
 		case BOOLEAN:
 		case CHAR:
 		case DIFF:
@@ -275,57 +277,58 @@ Node* get_terminal_node(token nxt){
 		case TIMES:
 		case VARIABLE:
 			lexeme = string(text);
-		break;
+		default:
+			break;
 	}
 	return new Node((symbol) nxt, lexeme);
 }
 
 Node* run_recursive_parser(symbol sym, token& nxt){
 	Node* root = new Node(sym);
-    for(auto & rule : rules[sym]){
-        if(rule.empty()){
-            return root;
-        }
-        if(rule[0] == (symbol) nxt || (rule[0] < 0 && first[rule[0]].count(nxt))
-            || (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(nxt)) ){
-            
-            for(int i = 0; i < (int)rule.size(); i++){
-                if(rule[i] < 0){
-                    Node* child = run_recursive_parser(rule[i], nxt);
-                    link(root, child);
-                }
-                else{
-                    if((token) rule[i] != nxt){
-                        cout << "Syntax error!\n";
-                        cout << "line: " << line << "\n";
-                        cout << "column: " << column << "\n";
-                        cout << "text: " << text << "\n";
-                        cout << "expected token id: " << symbol_to_string[rule[i]] << "\n";
-                        cout << "actual token id: " << symbol_to_string[(symbol) nxt] << "\n";
-                        exit(0);
-                    }
-                    else{ // match
-                    	bool relevant = nxt != ENDL && nxt != LPAREN && nxt != RPAREN;
-                    	relevant &= (sym == EXPR_LIST2) || (nxt != COMMA && nxt != SEMICOLON);
-                    	if(relevant){ // ignore irrelevant tokens
+	for(auto & rule : rules[sym]){
+		if(rule.empty()){
+			return root;
+		}
+		if(rule[0] == (symbol) nxt || (rule[0] < 0 && first[rule[0]].count(nxt))
+			|| (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(nxt)) ){
+			
+			for(int i = 0; i < (int)rule.size(); i++){
+				if(rule[i] < 0){
+					Node* child = run_recursive_parser(rule[i], nxt);
+					link(root, child);
+				}
+				else{
+					if((token) rule[i] != nxt){
+						cout << "Syntax error!\n";
+						cout << "line: " << line << "\n";
+						cout << "column: " << column << "\n";
+						cout << "text: " << text << "\n";
+						cout << "expected token id: " << symbol_to_string[rule[i]] << "\n";
+						cout << "actual token id: " << symbol_to_string[(symbol) nxt] << "\n";
+						exit(0);
+					}
+					else{ // match
+						bool relevant = nxt != ENDL && nxt != LPAREN && nxt != RPAREN;
+						relevant &= (sym == EXPR_LIST2) || (nxt != COMMA && nxt != SEMICOLON);
+						if(relevant){ // ignore irrelevant tokens
 							link(root, get_terminal_node(nxt));
 						}
-                        nxt = next_useful_token();
-                    }
-                }
-            }
-            
-            return;
-        }
-    }
-    
-    cout << "Syntax error!\n";
-    cout << "Couldn't derive any expression from non-terminal symbol " << symbol_to_string[sym] << "\n";
-    cout << "line: " << line << "\n";
-    cout << "column: " << column << "\n";
-    cout << "text: " << text << "\n";
-    cout << "token id: " << symbol_to_string[(symbol) nxt] << "\n";
-    exit(0);
+						nxt = next_useful_token();
+					}
+				}
+			}
+			
+			return root;
+		}
+	}
+	
+	cout << "Syntax error!\n";
+	cout << "Couldn't derive any expression from non-terminal symbol " << symbol_to_string[sym] << "\n";
+	cout << "line: " << line << "\n";
+	cout << "column: " << column << "\n";
+	cout << "text: " << text << "\n";
+	cout << "token id: " << symbol_to_string[(symbol) nxt] << "\n";
+	exit(0);
 }
 
 void compress_tree(Node* node){
@@ -343,9 +346,14 @@ void compress_tree(Node* node){
 		case IDX2:
 		case VARIABLE2:
 		case VARIABLE_LIST2:
+		case UNARYOP:
+		case RELOP:
+		case NATIVE_FUNCTION:
 			should_be_compressed = true;
+		default:
+			break;
 	}
-	if(node != node->father && node->sym == node->father->sym){
+	if(node->father != NULL && node->sym == node->father->sym){
 		should_be_compressed = true;
 	}
 	for(Node* child : node->children){
@@ -358,11 +366,11 @@ void compress_tree(Node* node){
 		should_be_compressed = true;
 	}
 	if(should_be_compressed){
-		node.father = NULL;
+		node->father = NULL;
 	}
 }
 
-void update_children(Node* node){
+void update_children(Node* node, bool is_root = false){
 	vector<Node*> old_children = node->children;
 	node->children.clear();
 	
@@ -370,29 +378,139 @@ void update_children(Node* node){
 		update_children(child);
 	}
 	if(node->sym < 0 && node->children.empty()){
-		node.father = NULL;
+		node->father = NULL;
 	}
-	
-	if(node.father == NULL){
+	if(node->father == NULL && !is_root){
 		delete node;
 	}
-	else{
-		node.father.children.push_back(node);
+	if(node->father != NULL){
+		node->father->children.push_back(node);
 	}
 }
 
-void build_abstract_tree(Node* node){
+Node* copy_node(Node* node){
+	Node* cp = new Node(node->sym);
+	*cp = *node;
+	return cp;
+}
+
+Node* build_abstract_tree(Node* node, Node* abstract_father){
+	int assoc = 0; // left = -1, none = 0, right = 1
+	switch(node->sym){
+		case NUM_LIST:
+		case EXPR_LIST:
+		case VARIABLE_LIST:
+		case EXPOEXP:
+			assoc = 1;
+			break;
+		case OREXP:
+		case ANDEXP:
+		case SUMEXP:
+		case PRODEXP:
+			assoc = -1;
+		default:
+			break;
+	}
+	bool ignore = false;
+	if(node->children.size() == 1){
+		switch(node->sym){
+			case OREXP:
+			case ANDEXP:
+			case RELEXP:
+			case SUMEXP:
+			case PRODEXP:
+			case EXPOEXP:
+			case UNARYEXP:
+				ignore = true;
+			default:
+				break;
+		}
+	}
+	Node* abstract_node;
+	if(ignore){
+		abstract_node = abstract_father;
+	}
+	else{
+		abstract_node = copy_node(node);
+		abstract_node->children.clear();
+		link(abstract_father, abstract_node);
+	}
+	if(assoc == 0 || node->children.size() < 3){
+		for(Node* child : node->children){
+			build_abstract_tree(child, abstract_node);
+		}
+	}
+	else{
+		symbol sym = node->sym;
+		int step = 1;
+		if(sym != NUM_LIST && sym != VARIABLE_LIST){
+			step = 2;
+		}
+		size_t number_new_nodes = (node->children.size() - 1) / step;
+		vector<Node*> auxiliary_nodes(number_new_nodes, NULL);
+		if(assoc < 0){
+			size_t j = 0;
+			for(size_t i = 1; i < node->children.size(); i += step){
+				if(j < number_new_nodes - 1){
+					auxiliary_nodes[j] = new Node(node->sym, node->lexeme);
+				}
+				else{
+					auxiliary_nodes[j] = abstract_node;
+				}
+				if(i == 1){
+					build_abstract_tree(node->children[0], auxiliary_nodes[j]);
+				}
+				else{
+					link(auxiliary_nodes[j], auxiliary_nodes[j - 1]);
+				}
+				for(int i2 = 0; i2 < step; i2++){
+					build_abstract_tree(node->children[i + i2], auxiliary_nodes[j]);
+				}
+				j++;
+			}
+		}
+		else{
+			size_t j = number_new_nodes - 1;
+			for(size_t i = node->children.size() - 1 - step; i + step > i; i -= step){
+				if(j > 0){
+					auxiliary_nodes[j] = new Node(node->sym, node->lexeme);
+				}
+				else{
+					auxiliary_nodes[j] = abstract_node;
+				}
+				for(int i2 = 0; i2 < step; i2++){
+					build_abstract_tree(node->children[i + i2], auxiliary_nodes[j]);
+				}
+				if(i == node->children.size() - 2){
+					build_abstract_tree(node->children.back(), auxiliary_nodes[j]);
+				}
+				else{
+					link(auxiliary_nodes[j], auxiliary_nodes[j + 1]);
+				}
+				j--;
+			}
+		}
+	}
 	
+	return abstract_node;
+}
+
+void delete_tree(Node * root){
+	for(Node* child : root->children){
+		delete_tree(child);
+	}
+	delete root;
 }
 
 void run_recursive_parser(){
-    token nxt_token = next_useful_token();
-    Node* tree = run_recursive_parser(PROGRAM, nxt_token);
-    
-    compress_tree(tree);
-    update_children(tree);
-    
-    build_abstract_tree(tree);
+	token nxt_token = next_useful_token();
+	Node* tree = run_recursive_parser(PROGRAM, nxt_token);
+	
+	compress_tree(tree);
+	update_children(tree, true);
+	
+	Node* abstract_tree = build_abstract_tree(tree, NULL);
+	delete_tree(tree);
 }
 
 void run_parser_with_table(){
