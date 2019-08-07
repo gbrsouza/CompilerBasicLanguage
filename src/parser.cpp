@@ -24,7 +24,7 @@ map<symbol, vector<vector<symbol> > > rules;
 map<symbol, bool> nullable, endable;
 map<symbol, set<token> > follow, first;
 
-map<string, symbol> to_symbol = {
+map<string, symbol> string_to_symbol = {
 	{"ABS", T_ABS},
 	{"AND", T_AND},
 	{"ATN", T_ATN},
@@ -123,7 +123,7 @@ map<string, symbol> to_symbol = {
 	{"<empty_lines>", EMPTY_LINES},
 };
 
-map<symbol, string> to_string;
+map<symbol, string> symbol_to_string;
 
 void build_sets(){
 	std::ifstream in("documentation/table.txt");
@@ -136,19 +136,19 @@ void build_sets(){
 	while((cin >> Cur) && Cur != "#");
 	
 	while(cin >> Cur){
-		assert(to_symbol.count(Cur));
-		symbol cur = to_symbol[Cur];
+		assert(string_to_symbol.count(Cur));
+		symbol cur = string_to_symbol[Cur];
 		string s;
 		cin >> s;
 		assert(s == "|");
 		set<token> fst, flw;
 		while((cin >> s) && s != "|"){
-			assert(to_symbol.count(s) && to_symbol[s] > 0);
-			fst.insert((token)to_symbol[s]);
+			assert(string_to_symbol.count(s) && string_to_symbol[s] > 0);
+			fst.insert((token)string_to_symbol[s]);
 		}
 		while((cin >> s) && s != "|"){
-			assert(to_symbol.count(s) && to_symbol[s] > 0);
-			flw.insert((token)to_symbol[s]);
+			assert(string_to_symbol.count(s) && string_to_symbol[s] > 0);
+			flw.insert((token)string_to_symbol[s]);
 		}
 		first[cur] = fst;
 		follow[cur] = flw;
@@ -189,8 +189,8 @@ void read_grammar(){
 		else{
 		    end = ids[i+1] - 1;
 	    }
-		assert(to_symbol.count(input[p-1]));
-		symbol cur = to_symbol[input[p-1]];
+		assert(string_to_symbol.count(input[p-1]));
+		symbol cur = string_to_symbol[input[p-1]];
 		rules[cur] = vector<vector<symbol> >(0);
 		vector<symbol> rule;
 		bool has_lambda = false;
@@ -200,8 +200,8 @@ void read_grammar(){
 		        continue;
 	        }
 			if(input[j] != "|"){
-				assert(to_symbol.count(input[j]));
-				rule.push_back(to_symbol[input[j]]);
+				assert(string_to_symbol.count(input[j]));
+				rule.push_back(string_to_symbol[input[j]]);
 			}
 			else{
 				rules[cur].push_back(rule);
@@ -217,8 +217,8 @@ void read_grammar(){
 }
 
 void init_parser(){
-    for(auto it : to_symbol){
-        to_string[it.second] = it.first;
+    for(auto it : string_to_symbol){
+        symbol_to_string[it.second] = it.first;
     }
 	build_sets();
 	read_grammar();
@@ -300,12 +300,14 @@ Node* run_recursive_parser(symbol sym, token& nxt){
                         cout << "line: " << line << "\n";
                         cout << "column: " << column << "\n";
                         cout << "text: " << text << "\n";
-                        cout << "expected token id: " << to_string[rule[i]] << "\n";
-                        cout << "actual token id: " << to_string[(symbol) nxt] << "\n";
+                        cout << "expected token id: " << symbol_to_string[rule[i]] << "\n";
+                        cout << "actual token id: " << symbol_to_string[(symbol) nxt] << "\n";
                         exit(0);
                     }
                     else{ // match
-                    	if(nxt != COMMA && nxt != SEMICOLON && nxt != ENDL && nxt != LPAREN && nxt != RPAREN){ // ignore irrelevant tokens
+                    	bool relevant = nxt != ENDL && nxt != LPAREN && nxt != RPAREN;
+                    	relevant &= (sym == EXPR_LIST2) || (nxt != COMMA && nxt != SEMICOLON);
+                    	if(relevant){ // ignore irrelevant tokens
 							link(root, get_terminal_node(nxt));
 						}
                         nxt = next_useful_token();
@@ -318,11 +320,11 @@ Node* run_recursive_parser(symbol sym, token& nxt){
     }
     
     cout << "Syntax error!\n";
-    cout << "Couldn't derive any expression from non-terminal symbol " << to_string[sym] << "\n";
+    cout << "Couldn't derive any expression from non-terminal symbol " << symbol_to_string[sym] << "\n";
     cout << "line: " << line << "\n";
     cout << "column: " << column << "\n";
     cout << "text: " << text << "\n";
-    cout << "token id: " << to_string[(symbol) nxt] << "\n";
+    cout << "token id: " << symbol_to_string[(symbol) nxt] << "\n";
     exit(0);
 }
 
