@@ -62,25 +62,59 @@ string astToTikz(Node *root){
 	vector<TikzNodeDef> nodeDefs;
 	vector<TikzEdgeDef> edgeDefs;
 
-	nodeDefs.push_back(TikzNodeDef(root->children.empty()? "terminalNode" : "nonterminalNode", "0", "", root->lexeme == "" ? symbol_to_string(root->sym) : root->lexeme));
+	q.push_back(make_pair(std::to_string(nodeDefs.size()), root));
 
-	deque<Node*> q;
-	q.push_back(root);
+	nodeDefs.push_back(TikzNodeDef(
+							root->children.empty()? "terminalNode" : "nonterminalNode", 
+							"0", 
+							"", 
+							root->lexeme == "" ? symbol_to_string(root->sym) : root->lexeme));
+
+	deque<pair<string, Node*> > q;
 
 	while(!q.empty()){
-		Node *u = q.front();
+		Node *u = q.front().second;
+		string fatherId = q.front().first;
+
 		q.pop_back();
-		TikzNodeDef def = TikzNodeDef(u->children.empty() ? "terminalNode" : "nonterminalNode", std::to_string(nodeDefs.size()), "", "");
-		def.nodeId = nodeDefs.size();
 
 		for(auto v : u->children){
+			q.push_back(make_pair(std::to_string(nodeDefs.size()), v));
+
+			TikzNodeDef def = TikzNodeDef(
+						u->children.empty() ? "terminalNode" : "nonterminalNode", 
+						std::to_string(nodeDefs.size()), 
+						"below=of " + fatherId, 
+						root->lexeme == "" ? symbol_to_string(root->sym) : root->lexeme
+					);
 			
+			
+			edgeDefs.push_back(TikzEdgeDef(
+				fatherId,
+				"south",
+				std::to_string(nodeDefs.size()),
+				"north"
+			));
+
+			nodeDefs.push_back(def);
 		}
 	}
 	
-	ret += "\\end{tikzpicture}";
+	ret += "%Nodes\n";
+
+	for(auto ndef : nodeDefs){
+		ret += "\\node[" + ndef.nodeType + "]\t\t(" + ndef.nodeId + ")\t\t[" + ndef.positioning + "]\t\t{"+ ndef.nodeContent +"};";
+	}
+
+	ret += "%Edges\n";
+
+	for(auto edef : nodeDefs){
+		ret += "\\draw[->] (" + edef.idFirst + "." + edef.regionFirst + ")\t\t--\t\t(" + edef.idSecond + "." + edef.regionSecond + ");";
+	}
+
+	ret += "\\end{tikzpicture}\n";
 }
 
 int main(){
-	cout << "\e\n";
+	
 }
