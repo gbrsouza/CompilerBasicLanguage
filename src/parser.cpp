@@ -24,7 +24,7 @@ map<symbol, vector<vector<symbol> > > rules;
 map<symbol, bool> nullable, endable;
 map<symbol, set<token> > follow, first;
 
-map<string, symbol> to_symbol = {
+map<string, symbol> string_to_symbol = {
 	{"ABS", T_ABS},
 	{"AND", T_AND},
 	{"ATN", T_ATN},
@@ -123,7 +123,7 @@ map<string, symbol> to_symbol = {
 	{"<empty_lines>", EMPTY_LINES},
 };
 
-map<symbol, string> to_string;
+map<symbol, string> symbol_to_string;
 
 void build_sets(){
 	std::ifstream in("documentation/table.txt");
@@ -136,19 +136,19 @@ void build_sets(){
 	while((cin >> Cur) && Cur != "#");
 	
 	while(cin >> Cur){
-		assert(to_symbol.count(Cur));
-		symbol cur = to_symbol[Cur];
+		assert(string_to_symbol.count(Cur));
+		symbol cur = string_to_symbol[Cur];
 		string s;
 		cin >> s;
 		assert(s == "|");
 		set<token> fst, flw;
 		while((cin >> s) && s != "|"){
-			assert(to_symbol.count(s) && to_symbol[s] > 0);
-			fst.insert((token)to_symbol[s]);
+			assert(string_to_symbol.count(s) && string_to_symbol[s] > 0);
+			fst.insert((token)string_to_symbol[s]);
 		}
 		while((cin >> s) && s != "|"){
-			assert(to_symbol.count(s) && to_symbol[s] > 0);
-			flw.insert((token)to_symbol[s]);
+			assert(string_to_symbol.count(s) && string_to_symbol[s] > 0);
+			flw.insert((token)string_to_symbol[s]);
 		}
 		first[cur] = fst;
 		follow[cur] = flw;
@@ -189,8 +189,8 @@ void read_grammar(){
 		else{
 		    end = ids[i+1] - 1;
 	    }
-		assert(to_symbol.count(input[p-1]));
-		symbol cur = to_symbol[input[p-1]];
+		assert(string_to_symbol.count(input[p-1]));
+		symbol cur = string_to_symbol[input[p-1]];
 		rules[cur] = vector<vector<symbol> >(0);
 		vector<symbol> rule;
 		bool has_lambda = false;
@@ -200,8 +200,8 @@ void read_grammar(){
 		        continue;
 	        }
 			if(input[j] != "|"){
-				assert(to_symbol.count(input[j]));
-				rule.push_back(to_symbol[input[j]]);
+				assert(string_to_symbol.count(input[j]));
+				rule.push_back(string_to_symbol[input[j]]);
 			}
 			else{
 				rules[cur].push_back(rule);
@@ -217,8 +217,8 @@ void read_grammar(){
 }
 
 void init_parser(){
-    for(auto it : to_symbol){
-        to_string[it.second] = it.first;
+    for(auto it : string_to_symbol){
+        symbol_to_string[it.second] = it.first;
     }
 	build_sets();
 	read_grammar();
@@ -239,17 +239,60 @@ token next_useful_token(){
     return tok;
 }
 
-void run_recursive_parser(symbol sym, token& nxt){
+struct Node {
+	Node* father;
+	vector<Node*> children;
+	symbol sym;
+	string lexeme;
+	
+	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
+}
+
+void link(Node* father, Node* child){
+	father.children.push_back(child);
+	child.father = father;
+}
+
+Node* get_terminal_node(token nxt){
+	string lexeme = "";
+    switch(nxt){
+		case BOOLEAN:
+		case CHAR:
+		case DIFF:
+		case DIVIDE:
+		case EQUALS:
+		case GT:
+		case GTE:
+		case INTEGER:
+		case FLOAT:
+		case LPAREN:
+		case LT:
+		case LTE:
+		case MOD:
+		case PLUS:
+		case RPAREN:
+		case STRING:
+		case TIMES:
+		case VARIABLE:
+			lexeme = string(text);
+		break;
+	}
+	return new Node((symbol) nxt, lexeme);
+}
+
+Node* run_recursive_parser(symbol sym, token& nxt){
+	Node* root = new Node(sym);
     for(auto & rule : rules[sym]){
         if(rule.empty()){
-            return;
+            return root;
         }
         if(rule[0] == (symbol) nxt || (rule[0] < 0 && first[rule[0]].count(nxt))
             || (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(nxt)) ){
             
             for(int i = 0; i < (int)rule.size(); i++){
                 if(rule[i] < 0){
-                    run_recursive_parser(rule[i], nxt);
+                    Node* child = run_recursive_parser(rule[i], nxt);
+                    link(root, child);
                 }
                 else{
                     if((token) rule[i] != nxt){
@@ -257,12 +300,16 @@ void run_recursive_parser(symbol sym, token& nxt){
                         cout << "line: " << line << "\n";
                         cout << "column: " << column << "\n";
                         cout << "text: " << text << "\n";
-                        cout << "expected token id: " << to_string[rule[i]] << "\n";
-                        cout << "actual token id: " << to_string[(symbol) nxt] << "\n";
+                        cout << "expected token id: " << symbol_to_string[rule[i]] << "\n";
+                        cout << "actual token id: " << symbol_to_string[(symbol) nxt] << "\n";
                         exit(0);
                     }
-                    else{
-                        // match
+                    else{ // match
+                    	bool relevant = nxt != ENDL && nxt != LPAREN && nxt != RPAREN;
+                    	relevant &= (sym == EXPR_LIST2) || (nxt != COMMA && nxt != SEMICOLON);
+                    	if(relevant){ // ignore irrelevant tokens
+							link(root, get_terminal_node(nxt));
+						}
                         nxt = next_useful_token();
                     }
                 }
@@ -273,19 +320,81 @@ void run_recursive_parser(symbol sym, token& nxt){
     }
     
     cout << "Syntax error!\n";
-    cout << "Couldn't derive any expression from non-terminal symbol " << to_string[sym] << "\n";
+    cout << "Couldn't derive any expression from non-terminal symbol " << symbol_to_string[sym] << "\n";
     cout << "line: " << line << "\n";
     cout << "column: " << column << "\n";
     cout << "text: " << text << "\n";
-    cout << "token id: " << to_string[(symbol) nxt] << "\n";
+    cout << "token id: " << symbol_to_string[(symbol) nxt] << "\n";
     exit(0);
+}
+
+void compress_tree(Node* node){
+	bool should_be_compressed = false;
+	switch(node->sym){
+		case EMPTY_LINES:
+		case ANDEXP2:
+		case EXPOEXP2:
+		case EXPR_LIST2:
+		case NUM_LIST2:
+		case OREXP2:
+		case PRODEXP2:
+		case RELEXP2:
+		case SUMEXP2:
+		case IDX2:
+		case VARIABLE2:
+		case VARIABLE_LIST2:
+			should_be_compressed = true;
+	}
+	if(node != node->father && node->sym == node->father->sym){
+		should_be_compressed = true;
+	}
+	for(Node* child : node->children){
+		if(should_be_compressed){
+			child->father = node->father;
+		}
+		compress_tree(child);
+	}
+	if(node->sym < 0 && node->children.empty()){
+		should_be_compressed = true;
+	}
+	if(should_be_compressed){
+		node.father = NULL;
+	}
+}
+
+void update_children(Node* node){
+	vector<Node*> old_children = node->children;
+	node->children.clear();
+	
+	for(Node* child : old_children){
+		update_children(child);
+	}
+	if(node->sym < 0 && node->children.empty()){
+		node.father = NULL;
+	}
+	
+	if(node.father == NULL){
+		delete node;
+	}
+	else{
+		node.father.children.push_back(node);
+	}
+}
+
+void build_abstract_tree(Node* node){
+	
 }
 
 void run_recursive_parser(){
     token nxt_token = next_useful_token();
-    run_recursive_parser(PROGRAM, nxt_token);
+    Node* tree = run_recursive_parser(PROGRAM, nxt_token);
+    
+    compress_tree(tree);
+    update_children(tree);
+    
+    build_abstract_tree(tree);
 }
 
 void run_parser_with_table(){
-
+	//TODO
 }
