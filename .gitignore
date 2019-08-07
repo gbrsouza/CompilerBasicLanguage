@@ -56,3 +56,4 @@ dkms.conf
 Compiler
 src/astToTikz
 src/token.cpp
+lex.yy.c

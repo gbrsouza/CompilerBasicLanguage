@@ -294,15 +294,6 @@ token next_useful_token(){
 	return tok;
 }
 
-struct Node {
-	Node* father;
-	vector<Node*> children;
-	symbol sym;
-	string lexeme;
-	
-	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
-};
-
 void link(Node* father, Node* child){
 	if(father != NULL){
 		father->children.push_back(child);
@@ -560,11 +551,13 @@ void delete_tree(Node * root){
 void run_recursive_parser(){
 	token nxt_token = next_useful_token();
 	Node* tree = run_recursive_parser(PROGRAM, nxt_token);
-	
+	cout << createTikzTree(tree) << "\n";
+
 	compress_tree(tree);
 	update_children(tree, true);
 	
 	Node* abstract_tree = build_abstract_tree(tree, NULL);
+	cout << createTikzTree(abstract_tree) << "\n";
 	delete_tree(tree);
 }
 
