@@ -239,17 +239,60 @@ token next_useful_token(){
     return tok;
 }
 
-void run_recursive_parser(symbol sym, token& nxt){
+struct Node {
+	Node* father;
+	vector<Node*> children;
+	symbol sym;
+	string lexeme;
+	
+	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
+}
+
+void link(Node* father, Node* child){
+	father.children.push_back(child);
+	child.father = father;
+}
+
+Node* get_terminal_node(token nxt){
+	string lexeme = "";
+    switch(nxt){
+		case BOOLEAN:
+		case CHAR:
+		case DIFF:
+		case DIVIDE:
+		case EQUALS:
+		case GT:
+		case GTE:
+		case INTEGER:
+		case FLOAT:
+		case LPAREN:
+		case LT:
+		case LTE:
+		case MOD:
+		case PLUS:
+		case RPAREN:
+		case STRING:
+		case TIMES:
+		case VARIABLE:
+			lexeme = string(text);
+		break;
+	}
+	return new Node((symbol) nxt, lexeme);
+}
+
+Node* run_recursive_parser(symbol sym, token& nxt){
+	Node* root = new Node(sym);
     for(auto & rule : rules[sym]){
         if(rule.empty()){
-            return;
+            return root;
         }
         if(rule[0] == (symbol) nxt || (rule[0] < 0 && first[rule[0]].count(nxt))
             || (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(nxt)) ){
             
             for(int i = 0; i < (int)rule.size(); i++){
                 if(rule[i] < 0){
-                    run_recursive_parser(rule[i], nxt);
+                    Node* child = run_recursive_parser(rule[i], nxt);
+                    link(root, child);
                 }
                 else{
                     if((token) rule[i] != nxt){
@@ -261,8 +304,10 @@ void run_recursive_parser(symbol sym, token& nxt){
                         cout << "actual token id: " << to_string[(symbol) nxt] << "\n";
                         exit(0);
                     }
-                    else{
-                        // match
+                    else{ // match
+                    	if(nxt != COMMA && nxt != SEMICOLON && nxt != ENDL){ // ignore irrelevant tokens
+							link(root, get_terminal_node(nxt));
+						}
                         nxt = next_useful_token();
                     }
                 }
@@ -281,11 +326,30 @@ void run_recursive_parser(symbol sym, token& nxt){
     exit(0);
 }
 
+Node* compress_tree(Node* root){
+	bool should_be_compressed = false;
+	switch(root->sym){
+		//TODO
+	}
+	return NULL;
+}
+
+Node* build_abstract_tree(Node* root){
+	//TODO
+	return NULL;
+}
+
 void run_recursive_parser(){
     token nxt_token = next_useful_token();
-    run_recursive_parser(PROGRAM, nxt_token);
+    Node* derivation_tree = run_recursive_parser(PROGRAM, nxt_token);
+    
+    Node* simplified_tree = compress_tree(derivation_tree);
+    delete_tree(derivation_tree);
+    
+    Node* abstract_tree = build_abstract_tree(simplified_tree);
+    delete_tree(simplified_tree);
 }
 
 void run_parser_with_table(){
-
+	//TODO
 }
