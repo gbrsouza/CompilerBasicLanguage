@@ -305,7 +305,7 @@ Node* run_recursive_parser(symbol sym, token& nxt){
                         exit(0);
                     }
                     else{ // match
-                    	if(nxt != COMMA && nxt != SEMICOLON && nxt != ENDL){ // ignore irrelevant tokens
+                    	if(nxt != COMMA && nxt != SEMICOLON && nxt != ENDL && nxt != LPAREN && nxt != RPAREN){ // ignore irrelevant tokens
 							link(root, get_terminal_node(nxt));
 						}
                         nxt = next_useful_token();
@@ -326,28 +326,71 @@ Node* run_recursive_parser(symbol sym, token& nxt){
     exit(0);
 }
 
-Node* compress_tree(Node* root){
+void compress_tree(Node* node){
 	bool should_be_compressed = false;
-	switch(root->sym){
-		//TODO
+	switch(node->sym){
+		case EMPTY_LINES:
+		case ANDEXP2:
+		case EXPOEXP2:
+		case EXPR_LIST2:
+		case NUM_LIST2:
+		case OREXP2:
+		case PRODEXP2:
+		case RELEXP2:
+		case SUMEXP2:
+		case IDX2:
+		case VARIABLE2:
+		case VARIABLE_LIST2:
+			should_be_compressed = true;
 	}
-	return NULL;
+	if(node != node->father && node->sym == node->father->sym){
+		should_be_compressed = true;
+	}
+	for(Node* child : node->children){
+		if(should_be_compressed){
+			child->father = node->father;
+		}
+		compress_tree(child);
+	}
+	if(node->sym < 0 && node->children.empty()){
+		should_be_compressed = true;
+	}
+	if(should_be_compressed){
+		node.father = NULL;
+	}
 }
 
-Node* build_abstract_tree(Node* root){
-	//TODO
-	return NULL;
+void update_children(Node* node){
+	vector<Node*> old_children = node->children;
+	node->children.clear();
+	
+	for(Node* child : old_children){
+		update_children(child);
+	}
+	if(node->sym < 0 && node->children.empty()){
+		node.father = NULL;
+	}
+	
+	if(node.father == NULL){
+		delete node;
+	}
+	else{
+		node.father.children.push_back(node);
+	}
+}
+
+void build_abstract_tree(Node* node){
+	
 }
 
 void run_recursive_parser(){
     token nxt_token = next_useful_token();
-    Node* derivation_tree = run_recursive_parser(PROGRAM, nxt_token);
+    Node* tree = run_recursive_parser(PROGRAM, nxt_token);
     
-    Node* simplified_tree = compress_tree(derivation_tree);
-    delete_tree(derivation_tree);
+    compress_tree(tree);
+    update_children(tree);
     
-    Node* abstract_tree = build_abstract_tree(simplified_tree);
-    delete_tree(simplified_tree);
+    build_abstract_tree(tree);
 }
 
 void run_parser_with_table(){
