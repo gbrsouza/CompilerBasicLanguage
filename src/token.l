@@ -73,7 +73,7 @@ FN[A-Z]								{return FUNCTION;}
 \"[^\"\\]*(\\.[^\"\\]*)*\"			{return STRING;}
 \'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{return CHAR;}
 
-[A-Z|0-9]+							{return LEXERROR;}
+[A-Z0-9]+							{return LEXERROR;}
 .									{return LEXERROR;}
 <<EOF>>								{return LEXEOF;}
 
