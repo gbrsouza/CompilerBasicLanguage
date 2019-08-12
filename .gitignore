@@ -1,5 +1,5 @@
-# Compiler executable
-Compiler
+# VScode folder
+.vscode/
 
 # Prerequisites
 *.d
@@ -53,3 +53,7 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+Compiler
+src/astToTikz
+src/token.cpp
+lex.yy.c

@@ -1,6 +1,8 @@
 #ifndef TOKEN
 #define TOKEN
 
+#include <initializer_list>
+
 extern int line, column;
 extern char * text;
 
@@ -64,6 +66,13 @@ enum token {
 	TO			= 57,
 	VARIABLE	= 58,
 	WHITE		= 59,
+};
+
+constexpr std::initializer_list<token> all_tokens =
+{
+ABS,AND,ATN,BOOLEAN,CHAR,COMMA,COMMENT,COS,DATA,DEF,DIFF,DIM,DIVIDE,END,ENDL,EQUALS,EXP,EXPONENTIAL,FLOAT,FOR,FUNCTION,GOSUB,GOTO,GT,GTE,IF,
+INPUT,INT,INTEGER,LET,LEXEOF,LEXERROR,LOG,LPAREN,LT,LTE,MINUS,MOD,NEXT,NOT,OR,PLUS,PRINT,READ,RETURN,RND,RPAREN,SEMICOLON,SIN,SQR,STEP,STOP,
+STRING,TAN,THEN,TIMES,TO,VARIABLE,WHITE,
 };
 
 token next_token();
