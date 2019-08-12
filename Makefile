@@ -36,4 +36,5 @@ parser.o: $(SRCDIR)parser.cpp
 clean: bin
 	$(DEL) ./$(EXEC)
 	$(DEL) $(BINDIR)*.o
+	$(DEL) $(SRCDIR)token.cpp
 
