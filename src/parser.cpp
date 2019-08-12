@@ -3,6 +3,7 @@
 #include <iostream>
 #include <map>
 #include <set>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@ using std::cin;
 using std::cout;
 using std::map;
 using std::set;
+using std::stack;
 using std::string;
 using std::vector;
 
@@ -127,18 +129,18 @@ map<symbol, string> symbol_to_string;
 
 string convertToLatex(string s){
 	string ret = "";
-	for(int i = 0; i < s.size(); i++){
-		if(s[i] == '_'){
+	for(char c : s){
+		if(c == '_'){
 			ret += "\\textunderscore ";
 		}
-		else if(s[i] == '<'){
+		else if(c == '<'){
 			ret += "$<$";
 		}
-		else if(s[i] == '>'){
+		else if(c == '>'){
 			ret += "$>$";
 		}
 		else{
-			ret += s[i];
+			ret += c;
 		}
 	}
 	return ret;
@@ -150,7 +152,7 @@ struct Node {
 	symbol sym;
 	string lexeme;
 	
-	Node(symbol s, string l = "") : sym(s), lexeme(l) { }
+	Node(symbol s, string l = "") : father(NULL), children(0), sym(s), lexeme(l) { }
 };
 
 string createTikzTree(Node *root, int depth=0){
@@ -242,7 +244,7 @@ void read_grammar(){
 			end = (int) input.size();
 		}
 		else{
-			end = ids[i+1] - 1;
+			end = ids[i + 1] - 1;
 		}
 		assert(string_to_symbol.count(input[p-1]));
 		symbol cur = string_to_symbol[input[p-1]];
@@ -301,7 +303,7 @@ void link(Node* father, Node* child){
 	child->father = father;
 }
 
-Node* get_terminal_node(token nxt){
+string get_lexeme(token nxt){
 	string lexeme = "";
 	switch(nxt){
 		case BOOLEAN:
@@ -326,19 +328,19 @@ Node* get_terminal_node(token nxt){
 		default:
 			break;
 	}
-	return new Node((symbol) nxt, lexeme);
+	return lexeme;
 }
 
 Node* run_recursive_parser(symbol sym, token& nxt){
 	Node* root = new Node(sym);
-	for(auto & rule : rules[sym]){
+	for(auto& rule : rules[sym]){
 		if(rule.empty()){
 			return root;
 		}
 		if(rule[0] == (symbol) nxt || (rule[0] < 0 && first[rule[0]].count(nxt))
 			|| (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(nxt)) ){
 			
-			for(int i = 0; i < (int)rule.size(); i++){
+			for(int i = 0; i < (int) rule.size(); i++){
 				if(rule[i] < 0){
 					Node* child = run_recursive_parser(rule[i], nxt);
 					link(root, child);
@@ -354,11 +356,7 @@ Node* run_recursive_parser(symbol sym, token& nxt){
 						exit(0);
 					}
 					else{ // match
-						bool relevant = nxt != ENDL && nxt != LPAREN && nxt != RPAREN;
-						relevant &= (sym == EXPR_LIST2) || (nxt != COMMA && nxt != SEMICOLON);
-						if(relevant){ // ignore irrelevant tokens
-							link(root, get_terminal_node(nxt));
-						}
+						link(root, new Node((symbol) nxt, get_lexeme(nxt)));
 						nxt = next_useful_token();
 					}
 				}
@@ -402,6 +400,16 @@ void compress_tree(Node* node){
 	if(node->father != NULL && node->sym == node->father->sym){
 		should_be_compressed = true;
 	}
+	
+	bool relevant = true;
+	if(node->sym > 0){
+		relevant = (token) node->sym != ENDL && (token) node->sym != LPAREN && (token) node->sym != RPAREN;
+		relevant &= (node->father->sym == EXPR_LIST2) || ((token) node->sym != COMMA && (token) node->sym != SEMICOLON);
+	}
+	if(!relevant){ //ignore irrelevant terminal symbols
+		should_be_compressed = true;
+	}
+	
 	for(Node* child : node->children){
 		if(should_be_compressed){
 			child->father = node->father;
@@ -429,7 +437,7 @@ void update_children(Node* node, bool is_root = false){
 	if(node->father == NULL && !is_root){
 		delete node;
 	}
-	if(node->father != NULL){
+	else if(node->father != NULL){
 		node->father->children.push_back(node);
 	}
 }
@@ -527,7 +535,7 @@ Node* build_abstract_tree(Node* node, Node* abstract_father){
 				for(int i2 = 0; i2 < step; i2++){
 					build_abstract_tree(node->children[i + i2], auxiliary_nodes[j]);
 				}
-				if(i == node->children.size() - 2){
+				if(i == node->children.size() - 1 - step){
 					build_abstract_tree(node->children.back(), auxiliary_nodes[j]);
 				}
 				else{
@@ -548,19 +556,91 @@ void delete_tree(Node * root){
 	delete root;
 }
 
-void run_recursive_parser(){
-	token nxt_token = next_useful_token();
-	Node* tree = run_recursive_parser(PROGRAM, nxt_token);
-	cout << createTikzTree(tree) << "\n";
-
+void process_tree(Node* tree){
 	compress_tree(tree);
 	update_children(tree, true);
 	
 	Node* abstract_tree = build_abstract_tree(tree, NULL);
-	cout << createTikzTree(abstract_tree) << "\n";
+	cout << createTikzTree(abstract_tree) + ";" << "\n";
 	delete_tree(tree);
 }
 
-void run_parser_with_table(){
-	//TODO
+void run_recursive_parser(){
+	token nxt_token = next_useful_token();
+	Node* root = run_recursive_parser(PROGRAM, nxt_token);
+	process_tree(root);
 }
+
+void run_parser_with_table(){
+	map<symbol, map<token, vector<symbol> > > parsing_table;
+	
+	for(symbol sym : all_symbols){
+		//terminal symbol
+		if(sym > 0){
+			continue;
+		}
+		for(token tok : all_tokens){
+			for(auto& rule : rules[sym]){
+				//empty rule
+				if(rule.empty()){
+					parsing_table[sym][tok] = rule;
+					break;
+				}
+				//rule starts with terminal
+				if(rule[0] == (symbol) tok){
+					parsing_table[sym][tok] = rule;
+					break;
+				}
+				//rule starts with non-terminal
+				if((rule[0] < 0 && first[rule[0]].count(tok)) || (rule[0] < 0 && nullable[rule[0]] && follow[rule[0]].count(tok))){
+					parsing_table[sym][tok] = rule;
+					break;
+				}
+			}
+		}
+	}
+	
+	Node* root = new Node(PROGRAM);
+	token nxt = next_useful_token();
+	
+	stack<Node*> st;
+	st.push(root);
+	
+	while(!st.empty()){
+		Node* node = st.top();
+		st.pop();
+		symbol sym = node->sym;
+		
+		if(sym > 0){
+			assert((token)sym == nxt);
+			node->lexeme = get_lexeme(nxt);
+			nxt = next_useful_token();
+			continue;
+		}
+		
+		if(!parsing_table[sym].count(nxt)){
+			cout << "Syntax error!\n";
+			cout << "Couldn't derive any expression from non-terminal symbol " << symbol_to_string[sym] << "\n";
+			cout << "line: " << line << "\n";
+			cout << "column: " << column << "\n";
+			cout << "text: " << text << "\n";
+			cout << "token id: " << symbol_to_string[(symbol) nxt] << "\n";
+			exit(0);
+		}
+		
+		vector<symbol>& rule = parsing_table[sym][nxt];
+		
+		for(symbol next_sym : rule){
+			Node* child = new Node(next_sym);
+			link(node, child);
+		}
+		
+		for(auto it = node->children.rbegin(); it != node->children.rend(); it++){
+			st.push(*it);
+		}
+	}
+	
+	process_tree(root);
+}
+
+
