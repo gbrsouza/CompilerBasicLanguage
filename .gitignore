@@ -49,11 +49,13 @@
 *.mod*
 *.cmd
 .tmp_versions/
+
 Compiler
 dkms.conf
+include/token.h
 Mkfile.old
 Module.symvers
 modules.order
 src/token.cpp
 src/parser.cpp
-include/token.h
+

@@ -2,16 +2,13 @@
 
 #include "token.h"
 
-int line = 1, next_line = 1, column = 1, next_column = 1;
-char * text;
-
 %}
   
 /* Rules Section*/
 %option caseless
 %% 
-[ \t\r]								{return WHITE;}
-REM[ ](.*)							{return COMMENT;}
+[ \t\r]								{/*return WHITE;*/}
+REM[ ](.*)							{/*return COMMENT;*/}
 \n									{return ENDL;}
 AND									{return AND;}
 OR									{return OR;}
@@ -81,20 +78,5 @@ FN[A-Z]								{return FUNCTION;}
 
 int yywrap(void){
 	return 1;
-}
-
-token next_token(){
-	token tok = (token) yylex();
-	line = next_line;
-	column = next_column;
-	text = yytext;
-	if(tok == ENDL){
-		next_line++;
-		next_column = 1;
-	}
-	else if(tok != LEXEOF){
-		next_column += (int) strlen(yytext);
-	}
-	return tok;
 }
 
