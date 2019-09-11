@@ -1,16 +1,10 @@
 %{
 #include "token.h"
 #include "lex.h"
-#include <stdio.h>
 
-template<class T>
-void yyerror(const T ){}
+void yyerror(const char *){ }
 
 %}
-
-%union {
-	bool b;
-}
 
 %token
 ABS 1
@@ -74,7 +68,7 @@ VARIABLE 58
 WHITE 59
 
 %%
-program         : blocks end { printf("oi\n"); }
+program         : blocks end
                 ;
 
 end             : INTEGER END empty_lines LEXEOF
