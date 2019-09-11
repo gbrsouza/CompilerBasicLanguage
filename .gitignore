@@ -49,9 +49,11 @@
 *.mod*
 *.cmd
 .tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
 Compiler
+dkms.conf
+Mkfile.old
+Module.symvers
+modules.order
 src/token.cpp
+src/parser.cpp
+include/token.h
