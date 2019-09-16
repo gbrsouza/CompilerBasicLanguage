@@ -1,6 +1,7 @@
 %{
-#include "token.h"
 #include "lex.h"
+#include "token.h"
+#include "tree_nodes.h"
 
 void yyerror(const char *){ }
 
@@ -67,36 +68,28 @@ TO 57
 VARIABLE 58
 WHITE 59
 
+// Operator's associativity and precedence
+%left OR
+%left AND
+%nonassoc DIFF EQUALS LT GT LTE GTE
+%left PLUS MINUS
+%left TIMES DIVIDE MOD
+%right EXPONENTIAL NOT
+
 %%
-program         : blocks end
+program         : stmts
                 ;
 
-end             : INTEGER END empty_lines LEXEOF
+end             : INTEGER END
                 ;
 
-empty_lines     : ENDL empty_lines
+stmts           : end
+                | stmt_decl stmts
+                ;
+
+stmt_decl       : INTEGER stmt ENDL
                 | ENDL
-                ;
-
-blocks          : block 
-                | blocks block
-                ;
-
-block           : INTEGER stmt ENDL 
-                | INTEGER ENDL 
-                | ENDL 
-                | for_block
-                ;
-
-for_block       : INTEGER for_init ENDL blocks next_stmt
-                | INTEGER for_init ENDL next_stmt
-                ;
-
-for_init        : FOR variable EQUALS expr TO expr STEP expr
-                | FOR variable EQUALS expr TO expr
-                ;
-
-next_stmt       : INTEGER NEXT variable ENDL
+                | INTEGER ENDL
                 ;
 
 stmt            : LET variable EQUALS expr
@@ -109,6 +102,9 @@ stmt            : LET variable EQUALS expr
                 | RETURN
                 | DEF FUNCTION LPAREN VARIABLE RPAREN EQUALS expr
                 | DIM variable
+                | NEXT variable
+                | FOR variable EQUALS expr TO expr STEP expr
+                | FOR variable EQUALS expr TO expr
                 | STOP
                 ;
 
@@ -127,46 +123,32 @@ variable_list   : variable
                 | variable_list COMMA variable
                 ;
 
-expr            : or_exp
-                ;
-                    
-or_exp          : or_exp OR and_exp
-                | and_exp
-                ;
-
-and_exp         : and_exp AND rel_exp
-                | rel_exp
-                ;
-
-rel_exp         : sum_exp rel_op sum_exp
-                | sum_exp
-                ;
-
-sum_exp         : sum_exp PLUS prod_exp
-                | sum_exp MINUS prod_exp
-                | prod_exp
-                ;
-
-prod_exp        : prod_exp TIMES expo_exp
-                | prod_exp DIVIDE expo_exp
-                | prod_exp MOD expo_exp
-                | expo_exp
-                ;
-
-expo_exp        : unary_exp EXPONENTIAL expo_exp 
-                | unary_exp
-                ;
-
-unary_exp       : INTEGER
-                | FLOAT
+expr            : expr OR expr
+                | expr AND expr
+                | expr DIFF expr
+                | expr EQUALS expr
+                | expr LT expr
+                | expr GT expr
+                | expr LTE expr
+                | expr GTE expr
+                | expr PLUS expr
+                | expr MINUS expr
+                | expr TIMES expr
+                | expr DIVIDE expr
+                | expr MOD expr
+                | expr EXPONENTIAL expr
+                | LPAREN expr RPAREN
+                | native_function LPAREN expr RPAREN
+                | FUNCTION LPAREN expr RPAREN
+                | NOT expr
+                | MINUS expr %prec EXPONENTIAL
+                | PLUS expr %prec EXPONENTIAL
                 | variable
+                | INTEGER
+                | FLOAT
                 | STRING
                 | CHAR
                 | BOOLEAN
-                | unary_op unary_exp
-                | LPAREN expr RPAREN
-                | FUNCTION LPAREN expr RPAREN
-                | native_function LPAREN expr RPAREN
                 ;
 
 variable        : VARIABLE
@@ -184,19 +166,6 @@ native_function : ABS
                 | SIN
                 | SQR
                 | TAN
-                ;
-
-unary_op        : MINUS
-                | PLUS
-                | NOT
-                ;
-
-rel_op          : DIFF
-                | EQUALS
-                | LT
-                | GT
-                | LTE
-                | GTE
                 ;
 
 %%
