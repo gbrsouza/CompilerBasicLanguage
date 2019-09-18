@@ -12,7 +12,7 @@ int position::get_column() const {
 	return column;
 }
 
-token::token(yytokentype _id, position _pos) : id(_id), pos(_pos) { }
+token::token(/*yytokentype _id, */position _pos) : /*id(_id), */pos(_pos) { }
 
 stmt::stmt() : line(-1) { }
 
@@ -20,7 +20,7 @@ void stmt::set_line(int _line){
 	line = _line;
 }
 
-program::program() : stmts() { }
+program::program() : stmts{} { }
 
 void program::push_front(stmt* stmt){
 	stmts.push_front(stmt);

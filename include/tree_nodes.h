@@ -7,8 +7,6 @@
 using std::deque;
 using std::string;
 
-#include "token.h"
-
 namespace ast{
 	class expr;
 	class variable;
@@ -25,10 +23,10 @@ namespace ast{
 	
 	class token{
 	private:
-		yytokentype id;
+		//yytokentype id;
 		position pos;
 	public:
-		token(yytokentype _id, position _pos);
+		token(/*yytokentype _id, */position _pos);
 	};
 
 	class stmt{
@@ -39,7 +37,7 @@ namespace ast{
 		void set_line(int _line);
 	};
 
-	class end : stmt{ };
+	class end : public stmt{ };
 
 	class program{
 	private:
@@ -49,7 +47,7 @@ namespace ast{
 		void push_front(stmt* _stmt);
 	};
 		
-	class let_stmt : stmt{
+	class let_stmt : public stmt{
 	private:
 		variable* var;
 		expr* val;
@@ -64,7 +62,7 @@ namespace ast{
 		expr(token _tok);
 	};
 
-	class binary_expr : expr {
+	class binary_expr : public expr {
 	private:
 		expr* left;
 		expr* right;
@@ -72,14 +70,14 @@ namespace ast{
 		binary_expr(expr* _left, token _tok, expr* _right);
 	};
 	
-	class unary_expr : expr {
+	class unary_expr : public expr {
 	private:
 		expr* target;
 	public:
 		unary_expr(token _tok, expr* _target);
 	};
 	
-	class function_expr : expr {
+	class function_expr : public expr {
 	private:
 		string name;
 		expr* param;
@@ -87,7 +85,7 @@ namespace ast{
 		function_expr(token _tok, const string& _name, expr* _param);
 	};
 	
-	class variable : expr {
+	class variable : public expr {
 	private:
 		string name;
 		expr* idx1;
@@ -99,7 +97,7 @@ namespace ast{
 	};
 	
 	template<class T>
-	class literal_expr : expr {
+	class literal_expr : public expr {
 	private:
 		T value;
 	public:

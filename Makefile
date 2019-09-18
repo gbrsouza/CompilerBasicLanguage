@@ -23,7 +23,7 @@ lex:
 	lex -o $(SRCDIR)token.cpp $(SRCDIR)token.l
 
 yacc:
-	yacc -o $(SRCDIR)parser.cpp --defines=$(DECLRDIR)token.h $(SRCDIR)grammar.y
+	yacc -o $(SRCDIR)parser.cpp $(SRCDIR)grammar.y
 
 ### bin folder (created only if it doesnt exist)
 bin:

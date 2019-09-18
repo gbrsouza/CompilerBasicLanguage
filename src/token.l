@@ -1,6 +1,11 @@
 %{ 
 
+#include <stdlib.h>
+#include <string>
+
 #include "token.h"
+
+using std::string;
 
 %}
   
@@ -62,12 +67,12 @@ TAN									{return TAN;}
 ,									{return COMMA;}
 ;									{return SEMICOLON;}
 
-FN[A-Z]								{return FUNCTION;}
-[A-Z]([0-9]?)						{return VARIABLE;}
+FN[A-Z]								{yylval._name = new std::string(yytext); return FUNCTION;}
+[A-Z]([0-9]?)						{yylval._name = new std::string(yytext); return VARIABLE;}
 
 [0-9]*\.[0-9]+						{return FLOAT;}
-[0-9]+								{return INTEGER;}
-\"[^\"\\]*(\\.[^\"\\]*)*\"			{return STRING;}
+[0-9]+								{yylval._int = atoi(yytext); return INTEGER;}
+\"[^\"\\]*(\\.[^\"\\]*)*\"			{yylval._name = new std::string(yytext); return STRING;}
 \'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{return CHAR;}
 
 [A-Z0-9]+							{return LEXERROR;}

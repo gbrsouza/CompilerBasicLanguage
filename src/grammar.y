@@ -1,11 +1,32 @@
 %{
+#include <string>
+#include <vector>
+#include <utility>
+
 #include "lex.h"
 #include "token.h"
 #include "tree_nodes.h"
 
+using std::string;
+using std::vector;
+using std::pair;
+
+using namespace ast;
+
+program* root = nullptr;
+
 void yyerror(const char *){ }
 
 %}
+
+%type <_program> program
+%type <_stmt> end
+%type <_program> stmts
+%type <_stmt> stmt_decl
+%type <_stmt> stmt
+%type <_expr> expr
+%type <_variable> variable
+%type <_name> native_function
 
 %token
 ABS 1
@@ -28,7 +49,7 @@ EXP 17
 EXPONENTIAL 18
 FLOAT 19
 FOR 20
-FUNCTION 21
+<_name> FUNCTION 21
 GOSUB 22
 GOTO 23
 GT 24
@@ -36,7 +57,7 @@ GTE 25
 IF 26
 INPUT 27
 INT 28
-INTEGER 29
+<_int> INTEGER 29
 LET 30
 LEXEOF 31
 LEXERROR 32
@@ -60,13 +81,15 @@ SIN 49
 SQR 50
 STEP 51
 STOP 52
-STRING 53
+<_name> STRING 53
 TAN 54
 THEN 55
 TIMES 56
 TO 57
-VARIABLE 58
+<_name> VARIABLE 58
 WHITE 59
+
+%start program
 
 // Operator's associativity and precedence
 %left OR
@@ -77,22 +100,22 @@ WHITE 59
 %right EXPONENTIAL NOT
 
 %%
-program         : stmts
+program         : stmts			{root = $$ = $1;}
                 ;
 
-end             : INTEGER END
+end             : INTEGER END	{$$ = new stmt{}; $$->set_line($1);}
                 ;
 
-stmts           : end
-                | stmt_decl stmts
+stmts           : end			{$$ = new program{}; $$->push_front($1); }
+                | stmt_decl stmts {$$ = $2; if($1 != nullptr) $$->push_front($1);}
                 ;
 
-stmt_decl       : INTEGER stmt ENDL
-                | ENDL
-                | INTEGER ENDL
+stmt_decl       : INTEGER stmt ENDL	{$$ = $2; $$->set_line($1);}
+                | ENDL				{$$ = nullptr;}
+                | INTEGER ENDL		{$$ = nullptr;}
                 ;
 
-stmt            : LET variable EQUALS expr
+stmt            : LET variable EQUALS expr	{$$ = new let_stmt($2, $4);}
                 | PRINT expr_list
                 | READ  variable_list
                 | DATA  num_list
