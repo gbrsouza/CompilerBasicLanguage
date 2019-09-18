@@ -4,6 +4,8 @@
 #include <deque>
 #include <string>
 
+#include "token.h"
+
 using std::deque;
 using std::string;
 
@@ -23,10 +25,10 @@ namespace ast{
 	
 	class token{
 	private:
-		//yytokentype id;
+		yytokentype id;
 		position pos;
 	public:
-		token(/*yytokentype _id, */position _pos);
+		token(int _id, position _pos);
 	};
 
 	class stmt{
@@ -79,21 +81,21 @@ namespace ast{
 	
 	class function_expr : public expr {
 	private:
-		string name;
+		string* name;
 		expr* param;
 	public:
-		function_expr(token _tok, const string& _name, expr* _param);
+		function_expr(token _tok, string* _name, expr* _param);
 	};
 	
 	class variable : public expr {
 	private:
-		string name;
+		string* name;
 		expr* idx1;
 		expr* idx2;
 	public:
-		variable(token _tok, const string& _name);
-		variable(token _tok, const string& _name, expr* _idx);
-		variable(token _tok, const string& _name, expr* _idx1, expr* _idx2);
+		variable(token _tok, string* _name);
+		variable(token _tok, string* _name, expr* _idx);
+		variable(token _tok, string* _name, expr* _idx1, expr* _idx2);
 	};
 	
 	template<class T>

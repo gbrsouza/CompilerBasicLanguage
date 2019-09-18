@@ -4,6 +4,7 @@
 #include <utility>
 
 #include "lex.h"
+#include "return_types.h"
 #include "token.h"
 #include "tree_nodes.h"
 
@@ -16,6 +17,11 @@ using namespace ast;
 program* root = nullptr;
 
 void yyerror(const char *){ }
+
+template<class T>
+position get_pos(T yypos){
+	return position{yypos.first_line, yypos.first_column};
+}
 
 %}
 
@@ -116,7 +122,7 @@ stmt_decl       : INTEGER stmt ENDL	{$$ = $2; $$->set_line($1);}
                 ;
 
 stmt            : LET variable EQUALS expr	{$$ = new let_stmt($2, $4);}
-                | PRINT expr_list
+                | PRINT expr_list			
                 | READ  variable_list
                 | DATA  num_list
                 | GOTO INTEGER
@@ -146,30 +152,30 @@ variable_list   : variable
                 | variable_list COMMA variable
                 ;
 
-expr            : expr OR expr
-                | expr AND expr
-                | expr DIFF expr
-                | expr EQUALS expr
-                | expr LT expr
-                | expr GT expr
-                | expr LTE expr
-                | expr GTE expr
-                | expr PLUS expr
-                | expr MINUS expr
-                | expr TIMES expr
-                | expr DIVIDE expr
-                | expr MOD expr
-                | expr EXPONENTIAL expr
-                | LPAREN expr RPAREN
-                | native_function LPAREN expr RPAREN
-                | FUNCTION LPAREN expr RPAREN
-                | NOT expr
-                | MINUS expr %prec EXPONENTIAL
-                | PLUS expr %prec EXPONENTIAL
-                | variable
-                | INTEGER
+expr            : expr OR expr			{$$ = new binary_expr($1, token(OR, get_pos(@2)), $3);}
+                | expr AND expr			{$$ = new binary_expr($1, token(AND, get_pos(@2)), $3);}
+                | expr DIFF expr		{$$ = new binary_expr($1, token(DIFF, get_pos(@2)), $3);}
+                | expr EQUALS expr		{$$ = new binary_expr($1, token(EQUALS, get_pos(@2)), $3);}
+                | expr LT expr			{$$ = new binary_expr($1, token(LT, get_pos(@2)), $3);}
+                | expr GT expr			{$$ = new binary_expr($1, token(GT, get_pos(@2)), $3);}
+                | expr LTE expr			{$$ = new binary_expr($1, token(LTE, get_pos(@2)), $3);}
+                | expr GTE expr			{$$ = new binary_expr($1, token(GTE, get_pos(@2)), $3);}
+                | expr PLUS expr		{$$ = new binary_expr($1, token(PLUS, get_pos(@2)), $3);}
+                | expr MINUS expr		{$$ = new binary_expr($1, token(MINUS, get_pos(@2)), $3);}
+                | expr TIMES expr		{$$ = new binary_expr($1, token(TIMES, get_pos(@2)), $3);}
+                | expr DIVIDE expr		{$$ = new binary_expr($1, token(DIVIDE, get_pos(@2)), $3);}
+                | expr MOD expr			{$$ = new binary_expr($1, token(MOD, get_pos(@2)), $3);}
+                | expr EXPONENTIAL expr	{$$ = new binary_expr($1, token(EXPONENTIAL, get_pos(@2)), $3);}
+                | LPAREN expr RPAREN	{$$ = $2;}
+                | native_function LPAREN expr RPAREN {$$ = new function_expr(token(FUNCTION, get_pos(@1)), $1, $3);}
+                | FUNCTION LPAREN expr RPAREN {$$ = new function_expr(token(FUNCTION, get_pos(@1)), $1, $3);}
+                | NOT expr				{$$ = new unary_expr(token(NOT, get_pos(@1)), $2);}
+                | MINUS expr %prec EXPONENTIAL {$$ = new unary_expr(token(MINUS, get_pos(@1)), $2);}
+                | PLUS expr %prec EXPONENTIAL {$$ = new unary_expr(token(PLUS, get_pos(@1)), $2);}
+                | variable				{$$ = $1;}
+                | INTEGER				{$$ = new literal_expr<int>(token(INTEGER, get_pos(@1)), $1);}
                 | FLOAT
-                | STRING
+                | STRING				{$$ = new literal_expr<string*>(token(STRING, get_pos(@1)), $1);}
                 | CHAR
                 | BOOLEAN
                 ;
@@ -179,16 +185,16 @@ variable        : VARIABLE
                 | VARIABLE LPAREN expr COMMA expr RPAREN
                 ;
 
-native_function : ABS
-                | ATN
-                | COS
-                | EXP
-                | INT
-                | LOG
-                | RND
-                | SIN
-                | SQR
-                | TAN
+native_function : ABS	{$$ = new string("ABS");}
+                | ATN	{$$ = new string("ATN");}
+                | COS	{$$ = new string("COS");}
+                | EXP	{$$ = new string("EXP");}
+                | INT	{$$ = new string("INT");}
+                | LOG	{$$ = new string("LOG");}
+                | RND	{$$ = new string("RND");}
+                | SIN	{$$ = new string("SIN");}
+                | SQR	{$$ = new string("SQR");}
+                | TAN	{$$ = new string("TAN");}
                 ;
 
 %%

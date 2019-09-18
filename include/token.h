@@ -1,10 +1,3 @@
-#ifndef TOKEN_H
-#define TOKEN_H
-
-#include <string>
-
-#include "tree_nodes.h"
-
 #ifndef YYTOKENTYPE
 #define YYTOKENTYPE
 enum yytokentype
@@ -129,20 +122,5 @@ enum yytokentype
 #define TO 57
 #define VARIABLE 58
 #define WHITE 59
-
-#endif
-
-typedef union{
-	ast::program* _program;
-	ast::stmt* _stmt;
-	ast::expr* _expr;
-	ast::variable* _variable;
-	std::string* _name;
-	int _int;
-} YYSTYPE;
-
-extern YYSTYPE yylval;
-
-int yyparse (void);
 
 #endif

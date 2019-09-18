@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string>
 
+#include "return_types.h"
 #include "token.h"
 
 using std::string;
