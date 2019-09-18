@@ -4,6 +4,8 @@
 #include <deque>
 #include <string>
 
+#include "visitor.h"
+
 using std::deque;
 using std::string;
 
@@ -15,6 +17,8 @@ namespace ast{
 	private:
 		int line;
 		int column;
+		friend void accept ( visitor& v);
+
 	public:
 		position(int _line, int _column);
 		int get_line() const;
@@ -25,6 +29,7 @@ namespace ast{
 	private:
 		//yytokentype id;
 		position pos;
+		friend void accept ( visitor& v);
 	public:
 		token(/*yytokentype _id, */position _pos);
 	};

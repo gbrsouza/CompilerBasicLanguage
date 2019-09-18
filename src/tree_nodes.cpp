@@ -12,7 +12,15 @@ int position::get_column() const {
 	return column;
 }
 
+void position::accept ( visitor& v) {
+	v.visit(this);
+}
+
 token::token(/*yytokentype _id, */position _pos) : /*id(_id), */pos(_pos) { }
+
+void token::accept ( visitor& v) {
+	v.visit(this);
+}
 
 stmt::stmt() : line(-1) { }
 
