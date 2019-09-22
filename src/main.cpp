@@ -2,4 +2,5 @@
 
 int main(){
 	yyparse();
+	delete root;
 }

@@ -2,6 +2,7 @@
 #define RETURN_TYPES_H
 
 #include <string>
+#include <vector>
 
 #include "tree_nodes.h"
 
@@ -11,7 +12,10 @@ typedef union{
 	ast::expr* _expr;
 	ast::variable* _variable;
 	std::string* _name;
+	std::vector<ast::expr*>* _num_list;
+	std::vector<ast::variable*>* _var_list;
 	int _int;
+	bool _bool;
 } YYSTYPE;
 
 extern YYSTYPE yylval;
