@@ -41,6 +41,15 @@ let_stmt::~let_stmt(){
 	delete val;
 }
 
+print_stmt::print_stmt(token _tok, vector<print_expr>* _values) : stmt(_tok), values(_values) { }
+
+print_stmt::~print_stmt(){
+	for(print_expr value : *values){
+		delete value.first;
+	}
+	delete values;
+}
+
 read_stmt::read_stmt(token _tok, vector<variable*>* _var_list) : stmt(_tok), var_list(_var_list) { }
 
 read_stmt::~read_stmt(){

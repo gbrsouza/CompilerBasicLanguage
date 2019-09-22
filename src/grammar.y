@@ -10,7 +10,6 @@
 
 using std::string;
 using std::vector;
-using std::pair;
 
 using namespace ast;
 
@@ -32,6 +31,7 @@ position get_pos(YYLTYPE yypos){
 %type <_expr> expr
 %type <_variable> variable
 %type <_name> native_function
+%type <_print_list> expr_list
 %type <_num_list> num_list
 %type <_var_list> variable_list
 
@@ -113,7 +113,7 @@ program         : stmts                                             {root = $$ =
 end             : INTEGER END                                       {$$ = new end_stmt(token(END, get_pos(@2))); $$->set_line($1);}
                 ;
 
-stmts           : end                                               {$$ = new program{}; $$->push_front($1); }
+stmts           : end                                               {$$ = new program{}; $$->push_front($1);}
                 | stmt_decl stmts                                   {$$ = $2; if($1 != nullptr) $$->push_front($1);}
                 ;
 
@@ -123,7 +123,7 @@ stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}
-                | PRINT expr_list            
+                | PRINT expr_list                                   {$$ = new print_stmt(token(PRINT, get_pos(@1)), $2);}
                 | READ  variable_list                               {$$ = new read_stmt(token(READ, get_pos(@1)), $2);}
                 | DATA  num_list                                    {$$ = new data_stmt(token(DATA, get_pos(@1)), $2);}
                 | GOTO INTEGER                                      {$$ = new goto_stmt(token(GOTO, get_pos(@1)), $2);}
@@ -144,9 +144,9 @@ num_list        : INTEGER                                           {$$ = new ve
                 | num_list COMMA FLOAT                              {$$ = $1; $$->push_back(new literal_expr<string*>(token(FLOAT, get_pos(@3)), $3));}
                 ;
 
-expr_list       : expr
-                | expr_list COMMA expr
-                | expr_list SEMICOLON expr
+expr_list       : expr                                              {$$ = new vector<print_expr>({{$1, false}});}
+                | expr_list COMMA expr                              {$$ = $1; $$->push_back({$3, true});}
+                | expr_list SEMICOLON expr                          {$$ = $1; $$->push_back({$3, false});}
                 ;
 
 variable_list   : variable                                          {$$ = new vector<variable*>({$1});}

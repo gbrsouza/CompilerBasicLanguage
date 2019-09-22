@@ -14,6 +14,7 @@ typedef union{
 	std::string* _name;
 	std::vector<ast::expr*>* _num_list;
 	std::vector<ast::variable*>* _var_list;
+	std::vector<ast::print_expr>* _print_list;
 	int _int;
 	bool _bool;
 } YYSTYPE;

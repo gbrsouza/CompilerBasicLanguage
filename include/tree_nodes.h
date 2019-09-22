@@ -4,6 +4,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "token.h"
 
@@ -14,6 +15,8 @@ using std::vector;
 namespace ast{
 	class expr;
 	class variable;
+	
+	typedef std::pair<expr*, bool> print_expr;
 	
 	class position{
 	private:
@@ -63,6 +66,14 @@ namespace ast{
 	public:
 		let_stmt(token _tok, variable* _var, expr* _val);
 		~let_stmt();
+	};
+	
+	class print_stmt : public stmt{
+	private:
+		vector<print_expr>* values;
+	public:
+		print_stmt(token _tok, vector<print_expr>* _values);
+		~print_stmt();
 	};
 	
 	class read_stmt : public stmt{
