@@ -2,6 +2,8 @@
 
 #include "visitor.h"
 
+
+
 void visitor::visit ( end *node ) {
 	std::cout << "{ \"command\": \"END\", \"line\" :  " 
 			  << node->line 
