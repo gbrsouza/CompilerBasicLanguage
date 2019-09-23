@@ -16,8 +16,8 @@ DEL = rm
 EXEC = Compiler
 
 ### executable target
-main: lex yacc bin token.o parser.o tree_nodes.o main.o
-	$(CXX) $(BINDIR)token.o $(BINDIR)parser.o $(BINDIR)tree_nodes.o $(BINDIR)main.o -o $(EXEC) $(OPTIONSCXX)
+main: lex yacc bin token.o visitor.o parser.o tree_nodes.o main.o
+	$(CXX) $(BINDIR)token.o $(BINDIR)visitor.o $(BINDIR)parser.o $(BINDIR)tree_nodes.o $(BINDIR)main.o -o $(EXEC) $(OPTIONSCXX)
 
 lex:
 	lex -o $(SRCDIR)token.cpp $(SRCDIR)token.l
@@ -36,6 +36,7 @@ main.o: $(SRCDIR)main.cpp
 token.o: $(SRCDIR)token.cpp
 parser.o: $(SRCDIR)parser.cpp
 tree_nodes.o: $(SRCDIR)tree_nodes.cpp
+visitor.o: $(SRCDIR)visitor.cpp
 
 ### clear objects & executable
 clean: bin
