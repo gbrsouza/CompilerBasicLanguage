@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string>
 
+#include "return_types.h"
 #include "token.h"
 
 using std::string;
@@ -36,8 +37,8 @@ DEF									{return DEF;}
 DIM									{return DIM;}
 STOP								{return STOP;}
 THEN								{return THEN;}
-TRUE								{return BOOLEAN;}
-FALSE								{return BOOLEAN;}
+TRUE								{yylval._bool = true; return BOOLEAN;}
+FALSE								{yylval._bool = false; return BOOLEAN;}
 
 ABS									{return ABS;}
 ATN									{return ATN;}
@@ -70,10 +71,10 @@ TAN									{return TAN;}
 FN[A-Z]								{yylval._name = new std::string(yytext); return FUNCTION;}
 [A-Z]([0-9]?)						{yylval._name = new std::string(yytext); return VARIABLE;}
 
-[0-9]*\.[0-9]+						{return FLOAT;}
+[0-9]*\.[0-9]+						{yylval._name = new std::string(yytext); return FLOAT;}
 [0-9]+								{yylval._int = atoi(yytext); return INTEGER;}
 \"[^\"\\]*(\\.[^\"\\]*)*\"			{yylval._name = new std::string(yytext); return STRING;}
-\'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{return CHAR;}
+\'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{yylval._name = new std::string(yytext); return CHAR;}
 
 [A-Z0-9]+							{return LEXERROR;}
 .									{return LEXERROR;}
