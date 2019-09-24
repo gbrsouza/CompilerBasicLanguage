@@ -3,10 +3,10 @@
 #include <vector>
 #include <utility>
 
-#include "lex.h"
-#include "return_types.h"
-#include "token.h"
-#include "tree_nodes.h"
+#include "lex.hpp"
+#include "return_types.hpp"
+#include "token.hpp"
+#include "tree_nodes.hpp"
 
 using std::string;
 using std::vector;

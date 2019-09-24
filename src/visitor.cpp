@@ -4,8 +4,8 @@
 #include <string>
 #include <type_traits>
 
-#include "tree_nodes.h"
-#include "visitor.h"
+#include "tree_nodes.hpp"
+#include "visitor.hpp"
 
 using namespace ast;
 

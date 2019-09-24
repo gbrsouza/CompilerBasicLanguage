@@ -1,5 +1,5 @@
-#include "parser.h"
-#include "visitor.h"
+#include "parser.hpp"
+#include "visitor.hpp"
 
 int main(){
 	yyparse();

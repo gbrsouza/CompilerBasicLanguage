@@ -6,9 +6,8 @@
 #include <vector>
 #include <utility>
 
-#include "token.h"
-
-#include "visitor.h"
+#include "token.hpp"
+#include "visitor.hpp"
 
 using std::deque;
 using std::string;

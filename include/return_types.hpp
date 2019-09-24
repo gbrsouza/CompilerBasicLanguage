@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "tree_nodes.h"
+#include "tree_nodes.hpp"
 
 typedef union{
 	ast::program* _program;
