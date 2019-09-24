@@ -1,9 +1,27 @@
 %{ 
 
-#include "token.h"
+#include <stdlib.h>
+#include <string>
 
+#include "return_types.hpp"
+#include "token.hpp"
+
+using std::string;
+
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line; \
+    yylloc.first_column = yylloc.last_column; \
+    for(char* c = yytext; *c; c++) { \
+        if(*c == '\n') { \
+            yylloc.last_line++; \
+            yylloc.last_column = 1; \
+        } \
+        else { \
+            yylloc.last_column++; \
+        } \
+    }
 %}
-  
+
 /* Rules Section*/
 %option caseless
 %% 
@@ -31,8 +49,8 @@ DEF									{return DEF;}
 DIM									{return DIM;}
 STOP								{return STOP;}
 THEN								{return THEN;}
-TRUE								{return BOOLEAN;}
-FALSE								{return BOOLEAN;}
+TRUE								{yylval._bool = true; return BOOLEAN;}
+FALSE								{yylval._bool = false; return BOOLEAN;}
 
 ABS									{return ABS;}
 ATN									{return ATN;}
@@ -62,13 +80,13 @@ TAN									{return TAN;}
 ,									{return COMMA;}
 ;									{return SEMICOLON;}
 
-FN[A-Z]								{return FUNCTION;}
-[A-Z]([0-9]?)						{return VARIABLE;}
+FN[A-Z]								{yylval._name = new std::string(yytext); return FUNCTION;}
+[A-Z]([0-9]?)						{yylval._name = new std::string(yytext); return VARIABLE;}
 
-[0-9]*\.[0-9]+						{return FLOAT;}
-[0-9]+								{return INTEGER;}
-\"[^\"\\]*(\\.[^\"\\]*)*\"			{return STRING;}
-\'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{return CHAR;}
+[0-9]*\.[0-9]+						{yylval._name = new std::string(yytext); return FLOAT;}
+[0-9]+								{yylval._int = atoi(yytext); return INTEGER;}
+\"[^\"\\]*(\\.[^\"\\]*)*\"			{yylval._name = new std::string(yytext); return STRING;}
+\'(\\n|\\t|\\r|\\0|\\'|\\\\|.)\'	{yylval._name = new std::string(yytext); return CHAR;}
 
 [A-Z0-9]+							{return LEXERROR;}
 .									{return LEXERROR;}
