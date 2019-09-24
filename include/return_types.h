@@ -19,10 +19,6 @@ typedef union{
 	bool _bool;
 } YYSTYPE;
 
-extern YYSTYPE yylval;
-
-int yyparse (void);
-
 #if ! defined YYLTYPE && ! defined YYLTYPE_IS_DECLARED
 typedef struct YYLTYPE YYLTYPE;
 struct YYLTYPE
@@ -35,5 +31,10 @@ struct YYLTYPE
 # define YYLTYPE_IS_DECLARED 1
 # define YYLTYPE_IS_TRIVIAL 1
 #endif
+
+extern YYSTYPE yylval;
+extern YYLTYPE yylloc;
+
+int yyparse (void);
 
 #endif

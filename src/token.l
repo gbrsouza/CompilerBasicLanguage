@@ -8,8 +8,20 @@
 
 using std::string;
 
+#define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line; \
+    yylloc.first_column = yylloc.last_column; \
+    for(char* c = yytext; *c; c++) { \
+        if(*c == '\n') { \
+            yylloc.last_line++; \
+            yylloc.last_column = 1; \
+        } \
+        else { \
+            yylloc.last_column++; \
+        } \
+    }
 %}
-  
+
 /* Rules Section*/
 %option caseless
 %% 
