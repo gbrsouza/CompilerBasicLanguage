@@ -29,6 +29,7 @@ class binary_expr;
 class unary_expr;
 class function_expr;
 class variable;
+class expr;
 template<class T> class literal_expr;
 
 class visitor{
@@ -64,5 +65,9 @@ extern template void visitor::visit<int>(const literal_expr<int>& node) const;
 extern template void visitor::visit<bool>(const literal_expr<bool>& node) const;
 
 }
+
+extern void solve_expr(const ast::visitor* vis, const ast::expr& exp, string label, string target);
+extern string verify_index(string idx);
+extern string create_default_index(string idx);
 
 #endif

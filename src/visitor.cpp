@@ -100,7 +100,11 @@ void visitor::visit(const position& node) const{ }
 
 void visitor::visit(const token& node) const{ }
 
-void visitor::visit(const program& node) const{ }
+void visitor::visit(const program& node) const{
+	for(auto _stmt = node.stmts.cbegin(); _stmt != node.stmts.cend(); _stmt++){
+		(*_stmt)->accept(*this);
+	}
+}
 
 void visitor::visit(const end_stmt& node) const{ }
 
@@ -132,6 +136,7 @@ void visitor::visit(const let_stmt& node) const{
 	solve_expr(this, *val, label + "_val", "target");
 	code += buffer;
 	buffer = code;
+	cout << "buffer:\n" << buffer << endl;
 }
 
 void visitor::visit(const print_stmt& node) const{ }
@@ -160,13 +165,17 @@ void visitor::visit(const for_stmt& node) const{ }
 
 void visitor::visit(const stop_stmt& node) const{ }
 
-void visitor::visit(const binary_expr& node) const{ }
+void visitor::visit(const binary_expr& node) const{
+	node.left->accept(*this);
+	buffer += " " + to_string(node.tok.id) + " ";
+	node.right->accept(*this);
+}
 
 void visitor::visit(const unary_expr& node) const{ }
 
 void visitor::visit(const function_expr& node) const{
 	string code;
-	node.param.accept(*this);
+	node.param->accept(*this);
 	if(node.name->operator[](0) == 'F' || node.name->operator[](0) == 'f'){
 		int id = (int) calls.size();
 		calls[id] = std::make_pair(buffer, *node.name);
@@ -175,7 +184,7 @@ void visitor::visit(const function_expr& node) const{
 	else{
 		string name = "";
 		for(char c : *node.name){
-			name += to_lower(c);
+			name += (char)tolower(c);
 		}
 		code = name + "(" + buffer + ")";
 	}
@@ -184,24 +193,26 @@ void visitor::visit(const function_expr& node) const{
 
 void visitor::visit(const variable& node) const{ }
 
-template<class T> void visitor::visit(const literal_expr<T>& node) const{ }
+template<class T> void visitor::visit(const literal_expr<T>& node) const{
+	buffer += to_string(node.value);
+}
 
 template void visitor::visit<string*>(const literal_expr<string*>& node) const;
 template void visitor::visit<int>(const literal_expr<int>& node) const;
 template void visitor::visit<bool>(const literal_expr<bool>& node) const;
 
 void solve_expr(const visitor* vis, const expr& exp, string label, string target){
-	string code += "value " + target + ";\n";
+	string code = "value " + target + ";\n";
 	code += "{\n";
 	exp.accept(*vis);
 	for(auto t : calls){
 		code += "next_label = get_def(\"" + t.second.second + "\");\n";
-		string new_label = label + "_t" + t.first;
+		string new_label = label + "_t" + to_string(t.first);
 		code += "push_function_call(" + new_label + ");\n";
 		code += "push_parameter(" + t.second.first + ");\n";
-		code += "goto transfer;"
+		code += "goto transfer;";
 		code += new_label + ":\n";		
-		code += "value t" + t.first + " = " + "get_return_value();\n";
+		code += "value t" + to_string(t.first) + " = " + "get_return_value();\n";
 	}
 	calls.clear();
 	code += target + " = " + buffer + ";\n";
@@ -209,3 +220,12 @@ void solve_expr(const visitor* vis, const expr& exp, string label, string target
 	buffer = code;
 }
 
+string verify_index(string idx){
+	string code = "verify_index("+idx+");\n";
+	return code;
+}
+
+string create_default_index(string idx){
+	string code = "value "+ idx + " = -1;\n";
+	return code;
+}

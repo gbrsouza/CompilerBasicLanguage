@@ -13,6 +13,8 @@ enum label{
 struct value;
 struct record;
 
+void verify_index(value val);
+
 void push_parameter(value val);
 void push_function_call(label lab);
 
