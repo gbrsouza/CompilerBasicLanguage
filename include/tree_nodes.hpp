@@ -103,6 +103,16 @@ namespace ast{
 		void accept(const visitor& v) const override;
 	};
 	
+	class input_stmt : public stmt{
+	private:
+		vector<variable*>* var_list;
+		friend class visitor;
+	public:
+		input_stmt(token _tok, vector<variable*>* _var_list);
+		~input_stmt();
+		void accept(const visitor& v) const override;
+	};
+	
 	class data_stmt : public stmt{
 	private:
 		vector<expr*>* num_list;

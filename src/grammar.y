@@ -126,6 +126,7 @@ stmt            : LET variable EQUALS expr                          {$$ = new le
                 | PRINT expr_list                                   {$$ = new print_stmt(token(PRINT, get_pos(@1)), $2);}
                 | READ  variable_list                               {$$ = new read_stmt(token(READ, get_pos(@1)), $2);}
                 | DATA  num_list                                    {$$ = new data_stmt(token(DATA, get_pos(@1)), $2);}
+                | INPUT variable_list                               {$$ = new input_stmt(token(INPUT, get_pos(@1)), $2);}
                 | GOTO INTEGER                                      {$$ = new goto_stmt(token(GOTO, get_pos(@1)), $2);}
                 | IF expr THEN INTEGER                              {$$ = new if_stmt(token(IF, get_pos(@1)), $2, $4);}
                 | GOSUB INTEGER                                     {$$ = new gosub_stmt(token(GOSUB, get_pos(@1)), $2);}

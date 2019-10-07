@@ -14,6 +14,7 @@ class end_stmt;
 class let_stmt;
 class print_stmt;
 class read_stmt;
+class input_stmt;
 class data_stmt;
 class goto_stmt;
 class if_stmt;
@@ -39,6 +40,7 @@ public:
 	void visit(const let_stmt& node) const;
 	void visit(const print_stmt& node) const;
 	void visit(const read_stmt& node) const;
+	void visit(const input_stmt& node) const;
 	void visit(const data_stmt& node) const;
 	void visit(const goto_stmt& node) const;
 	void visit(const if_stmt& node) const;
