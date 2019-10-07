@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "tree_nodes.hpp"
 
@@ -11,6 +12,7 @@ using namespace ast;
 using std::cout;
 using std::endl;
 using std::map;
+using std::pair;
 using std::string;
 
 string to_string(yytokentype value){
@@ -91,7 +93,8 @@ inline string to_string(string* value){
 }
 
 vector<string> labels;
-map<int, string> calls;
+map<int, pair<string, string>> calls;
+string buffer;
 
 void visitor::visit(const position& node) const{ }
 
@@ -101,7 +104,35 @@ void visitor::visit(const program& node) const{ }
 
 void visitor::visit(const end_stmt& node) const{ }
 
-void visitor::visit(const let_stmt& node) const{ }
+void visitor::visit(const let_stmt& node) const{
+	int line = node.line;
+	string label = "l" + to_string(line);
+	labels.push_back(label);
+	const auto& var = node.var;
+	const auto& val = node.val;
+	string code = "\t" + label + ":\n";
+	if(var->idx1 != nullptr){		
+		solve_expr(this, *var->idx1, label + "_idx1", "idx1");
+		code += buffer;
+		code += verify_index("idx1");
+		buffer.clear();
+	}
+	else{
+		code += create_default_index("idx1");
+	}
+	if(var->idx2 != nullptr){		
+		solve_expr(this, *var->idx2, label + "_idx2", "idx2");
+		code += buffer;
+		code += verify_index("idx2");
+		buffer.clear();
+	}
+	else{
+		code += create_default_index("idx2");
+	}
+	solve_expr(this, *val, label + "_val", "target");
+	code += buffer;
+	buffer = code;
+}
 
 void visitor::visit(const print_stmt& node) const{ }
 
@@ -133,7 +164,23 @@ void visitor::visit(const binary_expr& node) const{ }
 
 void visitor::visit(const unary_expr& node) const{ }
 
-void visitor::visit(const function_expr& node) const{ }
+void visitor::visit(const function_expr& node) const{
+	string code;
+	node.param.accept(*this);
+	if(node.name->operator[](0) == 'F' || node.name->operator[](0) == 'f'){
+		int id = (int) calls.size();
+		calls[id] = std::make_pair(buffer, *node.name);
+		code = string("t") + to_string(id);
+	}
+	else{
+		string name = "";
+		for(char c : *node.name){
+			name += to_lower(c);
+		}
+		code = name + "(" + buffer + ")";
+	}
+	buffer = code;
+}
 
 void visitor::visit(const variable& node) const{ }
 
@@ -142,4 +189,23 @@ template<class T> void visitor::visit(const literal_expr<T>& node) const{ }
 template void visitor::visit<string*>(const literal_expr<string*>& node) const;
 template void visitor::visit<int>(const literal_expr<int>& node) const;
 template void visitor::visit<bool>(const literal_expr<bool>& node) const;
+
+void solve_expr(const visitor* vis, const expr& exp, string label, string target){
+	string code += "value " + target + ";\n";
+	code += "{\n";
+	exp.accept(*vis);
+	for(auto t : calls){
+		code += "next_label = get_def(\"" + t.second.second + "\");\n";
+		string new_label = label + "_t" + t.first;
+		code += "push_function_call(" + new_label + ");\n";
+		code += "push_parameter(" + t.second.first + ");\n";
+		code += "goto transfer;"
+		code += new_label + ":\n";		
+		code += "value t" + t.first + " = " + "get_return_value();\n";
+	}
+	calls.clear();
+	code += target + " = " + buffer + ";\n";
+	code += "}\n";
+	buffer = code;
+}
 

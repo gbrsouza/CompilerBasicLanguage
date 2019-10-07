@@ -13,6 +13,9 @@ enum label{
 struct value;
 struct record;
 
+void push_parameter(value val);
+void push_function_call(label lab);
+
 void let(char* name, int id1, int id2, value val);
 void def(char* name, label lab);
 label get_def(char* name);
