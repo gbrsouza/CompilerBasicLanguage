@@ -1,0 +1,4 @@
+1 DEF FNA(X) = X + 1
+2 LET X(10 / 2) = SIN(5) - FNA(FNA(10))
+3 END
+
