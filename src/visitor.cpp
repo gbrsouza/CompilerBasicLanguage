@@ -17,7 +17,7 @@ using std::string;
 string to_string(yytokentype value){
 	static map<yytokentype, string> token_to_string = {
 		{(yytokentype)ABS, "ABS"},
-		{(yytokentype)AND, "AND"},
+		{(yytokentype)AND, "&&"},
 		{(yytokentype)ATN, "ATN"},
 		{(yytokentype)BOOLEAN, "BOOLEAN"},
 		{(yytokentype)CHAR, "CHAR"},
@@ -26,7 +26,7 @@ string to_string(yytokentype value){
 		{(yytokentype)COS, "COS"},
 		{(yytokentype)DATA, "DATA"},
 		{(yytokentype)DEF, "DEF"},
-		{(yytokentype)DIFF, "DIFF"},
+		{(yytokentype)DIFF, "!="},
 		{(yytokentype)DIM, "DIM"},
 		{(yytokentype)DIVIDE, "/"},
 		{(yytokentype)END, "END"},
@@ -50,8 +50,8 @@ string to_string(yytokentype value){
 		{(yytokentype)LEXERROR, "LEXERROR"},
 		{(yytokentype)LOG, "LOG"},
 		{(yytokentype)LPAREN, "LPAREN"},
-		{(yytokentype)LT, "LT"},
-		{(yytokentype)LTE, "LTE"},
+		{(yytokentype)LT, "<"},
+		{(yytokentype)LTE, "<="},
 		{(yytokentype)MINUS, "-"},
 		{(yytokentype)MOD, "%"},
 		{(yytokentype)NEXT, "NEXT"},
@@ -132,6 +132,15 @@ void visitor::visit(const program& node) const{
 	
 	code += main;
 	
+	code += "transfer:\n";
+	code += "switch(next_label){\n";
+	for(string& label : labels){
+		code += "\tcase " + label + ":\n";
+		code += "\t\tgoto " + label + ";\n";
+		code += "\t\tbreak;\n";
+	}
+	code += "}";
+
 	while(std::getline(std::cin, line)){
 		code += line + "\n";
 	}

@@ -97,4 +97,3 @@ struct record{
 		string* name;
 	} record_content;
 };
-
