@@ -10,6 +10,8 @@ enum label{
 
 };
 
+label next_label;
+
 struct value;
 struct record;
 
