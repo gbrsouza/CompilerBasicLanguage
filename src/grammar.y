@@ -133,9 +133,9 @@ stmt            : LET variable EQUALS expr                          {$$ = new le
                 | RETURN                                            {$$ = new return_stmt(token(RETURN, get_pos(@1)));}
                 | DEF FUNCTION LPAREN VARIABLE RPAREN EQUALS expr   {$$ = new def_stmt(token(DEF, get_pos(@1)), $2, $4, $7);}
                 | DIM variable                                      {$$ = new dim_stmt(token(DIM, get_pos(@1)), $2);}
-                | NEXT variable                                     {$$ = new next_stmt(token(NEXT, get_pos(@1)), $2);}
-                | FOR variable EQUALS expr TO expr STEP expr        {$$ = new for_stmt(token(FOR, get_pos(@1)), $2, $4, $6, $8);}
-                | FOR variable EQUALS expr TO expr                  {$$ = new for_stmt(token(FOR, get_pos(@1)), $2, $4, $6);}
+                | NEXT VARIABLE                                     {$$ = new next_stmt(token(NEXT, get_pos(@1)), new variable(token(VARIABLE, get_pos(@2)), $2));}
+                | FOR VARIABLE EQUALS expr TO expr STEP expr        {$$ = new for_stmt(token(FOR, get_pos(@1)), new variable(token(VARIABLE, get_pos(@2)), $2), $4, $6, $8);}
+                | FOR VARIABLE EQUALS expr TO expr                  {$$ = new for_stmt(token(FOR, get_pos(@1)), new variable(token(VARIABLE, get_pos(@2)), $2), $4, $6);}
                 | STOP                                              {$$ = new stop_stmt(token(STOP, get_pos(@1)));}
                 ;
 
