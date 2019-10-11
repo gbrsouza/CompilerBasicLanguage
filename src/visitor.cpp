@@ -185,7 +185,14 @@ void visitor::visit(const let_stmt& node) const{
 	}
 	solve_expr(this, *val, label + "_val", "target");
 	code += buffer;
-	code += "let(\"" + *var->name + "\", idx1, idx2, target);\n";
+	string idx1 = "idx1", idx2 = "idx2";
+	if(var->idx1 != nullptr){
+		idx1 += ".content._int";
+	}
+	if(var->idx2 != nullptr){
+		idx2 += ".content._int";
+	}
+	code += "let(\"" + *var->name + "\", " + idx1 + ", " + idx2 + ", target);\n";
 	buffer = code;
 }
 
@@ -195,15 +202,57 @@ void visitor::visit(const read_stmt& node) const{ }
 
 void visitor::visit(const input_stmt& node) const{ }
 
-void visitor::visit(const data_stmt& node) const{ }
+void visitor::visit(const data_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	for(expr* numeric_value : *node.num_list){
+		numeric_value->accept(*this);
+		code += "data(" + buffer + ");\n";
+	}
+	buffer = code;
+}
 
-void visitor::visit(const goto_stmt& node) const{ }
+void visitor::visit(const goto_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	string target_label = "l" + to_string(node.target_line);
+	code += "goto " + target_label + ";\n";
+	buffer = code;
+}
 
-void visitor::visit(const if_stmt& node) const{ }
+void visitor::visit(const if_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	string target_label = "l" + to_string(node.target_line);
+	solve_expr(this, *node.condition, label + "_condition", "condition");
+	code += buffer; //TODO verify if condition is bool or let the program convert?
+	code += "if(condition.content._bool) goto " + target_label + ";\n";
+	buffer = code;
+}
 
-void visitor::visit(const gosub_stmt& node) const{ }
+void visitor::visit(const gosub_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string return_label = label + "_ret";
+	labels.push_back(return_label);
+	string code = label + ":\n";
+	string target_label = "l" + to_string(node.target_line);
+	code += "push_function_call(" + return_label + ");\n";
+	code += "goto " + target_label + ";\n";
+	code += return_label + ":\n";
+	buffer = code;
+}
 
-void visitor::visit(const return_stmt& node) const{ }
+void visitor::visit(const return_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	code += "next_label = pop_function_call();\n";
+	code += "goto transfer;\n";
+}
 
 void visitor::visit(const def_stmt& node) const{
 	string label = "l" + to_string(node.line);
@@ -216,13 +265,51 @@ void visitor::visit(const def_stmt& node) const{
 	buffer = code;
 }
 
-void visitor::visit(const dim_stmt& node) const{ }
+void visitor::visit(const dim_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	const auto& var = node.var;
+	string code = label + ":\n";
+	if(var->idx1 != nullptr){		
+		solve_expr(this, *var->idx1, label + "_idx1", "idx1");
+		code += buffer;
+		code += verify_index("idx1");
+		buffer.clear();
+	}
+	else{
+		code += create_default_index("idx1");
+	}
+	if(var->idx2 != nullptr){		
+		solve_expr(this, *var->idx2, label + "_idx2", "idx2");
+		code += buffer;
+		code += verify_index("idx2");
+		buffer.clear();
+	}
+	else{
+		code += create_default_index("idx2");
+	}
+	string idx1 = "idx1", idx2 = "idx2";
+	if(var->idx1 != nullptr){
+		idx1 += ".content._int";
+	}
+	if(var->idx2 != nullptr){
+		idx2 += ".content._int";
+	}
+	code += "dim(\"" + *var->name + "\", " + idx1 + ", " + idx2 + ");\n";
+	buffer = code;
+}
 
 void visitor::visit(const next_stmt& node) const{ }
 
 void visitor::visit(const for_stmt& node) const{ }
 
-void visitor::visit(const stop_stmt& node) const{ }
+void visitor::visit(const stop_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	code += "return 0;\n";
+	buffer = code;
+}
 
 void visitor::visit(const binary_expr& node) const{
 	node.left->accept(*this);
@@ -232,7 +319,11 @@ void visitor::visit(const binary_expr& node) const{
 	buffer = code + buffer;
 }
 
-void visitor::visit(const unary_expr& node) const{ }
+void visitor::visit(const unary_expr& node) const{
+	string code = to_string(node.tok.id);
+	node.target->accept(*this);
+	buffer = code + buffer;
+}
 
 void visitor::visit(const function_expr& node) const{
 	string code;

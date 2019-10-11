@@ -19,6 +19,7 @@ void verify_index(value val);
 
 void push_parameter(value val);
 void push_function_call(label lab);
+label pop_function_call();
 
 void let(char* name, int id1, int id2, value val);
 void def(char* name, label lab);
