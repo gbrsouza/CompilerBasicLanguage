@@ -218,11 +218,52 @@ void visitor::visit(const let_stmt& node) const{
 	buffer = code;
 }
 
-void visitor::visit(const print_stmt& node) const{ }
+void visitor::visit(const print_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	int val_count = 0;
+	for(print_expr& cur_expr : *node.values){
+		code += "{\n";
+		solve_expr(this, *cur_expr.first, label + "_" + to_string(val_count++), "target");
+		code += buffer;
+		code += "print(target, " + to_string(cur_expr.second) + ");\n";
+		code += "}\n";
+	}
+	buffer = code;
+}
 
-void visitor::visit(const read_stmt& node) const{ }
+void visitor::visit(const read_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	int var_count = 0;
+	for(variable* p_var : *node.var_list){
+		code += "{\n";
+		const variable& var = *p_var;
+		get_var_idxs(this, label + "_" + to_string(var_count++), var->idx1, var->idx2);
+		code += buffer;
+		code += "read(\"" + *var->name + "\", idx1.content._int, idx2.content._int);\n";
+		code += "}\n";
+	}
+	buffer = code;
+}
 
-void visitor::visit(const input_stmt& node) const{ }
+void visitor::visit(const input_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	int var_count = 0;
+	for(variable* p_var : *node.var_list){
+		code += "{\n";
+		const variable& var = *p_var;
+		get_var_idxs(this, label + "_" + to_string(var_count++), var->idx1, var->idx2);
+		code += buffer;
+		code += "input(\"" + *var->name + "\", idx1.content._int, idx2.content._int);\n";
+		code += "}\n";
+	}
+	buffer = code;
+}
 
 void visitor::visit(const data_stmt& node) const{
 	string label = "l" + to_string(node.line);
@@ -284,7 +325,7 @@ void visitor::visit(const def_stmt& node) const{
 	labels.push_back(label_impl);
 	function_code[label_impl] = std::make_pair(*node.param, node.target);
 	string code = label + ":\n";
-	code += "update_def(\"" + *node.name + "\", " + label_impl + ");\n";
+	code += "def(\"" + *node.name + "\", " + label_impl + ");\n";
 	buffer = code;
 }
 
@@ -335,11 +376,7 @@ void visitor::visit(const function_expr& node) const{
 		code = string("t") + to_string(id);
 	}
 	else{
-		string name = "";
-		for(char c : *node.name){
-			name += (char)tolower(c);
-		}
-		code = name + "(" + buffer + ")";
+		code = *node.name + "(" + buffer + ")";
 	}
 	buffer = code;
 }
@@ -353,7 +390,7 @@ void visitor::visit(const variable& node) const{
 		buffer = "parameter";
 	} 
 	else{
-		string code = "get(\"" + *node.name + "\", ";
+		string code = "get_var(\"" + *node.name + "\", ";
 		if(node.idx1 != nullptr){
 			node.idx1->accept(*this);
 			code += "to_index(" + buffer + "), ";
@@ -373,7 +410,7 @@ void visitor::visit(const variable& node) const{
 }
 
 template<class T> void visitor::visit(const literal_expr<T>& node) const{
-	buffer = to_string(node.value);
+	buffer = "to_value(" + to_string(node.value) + ")";
 }
 
 template void visitor::visit<string*>(const literal_expr<string*>& node) const;
@@ -396,7 +433,8 @@ void solve_expr(const visitor* vis, const expr& exp, string label, string target
 		code += "push_parameter(" + t.second.first + ");\n";
 		code += "goto transfer;\n";
 		code += new_label + ":\n";		
-		code += "value t" + to_string(t.first) + " = " + "get_return_value();\n";
+		code += "value t" + to_string(t.first) + ";\n";
+		code += "t" + to_string(t.first) + " = " + "get_return_value();\n";
 		for(auto it2 = calls.cbegin(); it2 != it; it2++){
 			code += "t" + to_string(it2->first) + " = pop_value();\n";
 		}
@@ -414,7 +452,6 @@ string verify_index(string idx){
 
 string create_default_index(string idx){
 	string code = "value " + idx + ";\n";
-	code += idx + ".content._int = -1;\n";
-	code += idx + ".value_type = Int;\n";
+	code += idx + " = to_value(-1);\n";
 	return code;
 }
