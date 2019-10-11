@@ -127,9 +127,38 @@ void visitor::visit(const token& node) const{ }
 void visitor::visit(const program& node) const{
 	string code, main;
 	
+	auto add_to_main = [&](const string s){
+		static int ident = 1;
+		static bool init_of_line = true;
+		
+		for(char c : s){
+			if(init_of_line){
+				if(c != '}'){
+					main += '\t';
+				}
+				init_of_line = false;
+			}
+			main += c;
+			if(c == '\n'){
+				for(int j = 0; j < ident - 1; j++){
+					main += '\t';
+				}
+				if(ident > 0){
+					init_of_line = true;
+				}
+			}
+			if(c == '{'){
+				ident++;
+			}
+			if(c == '}'){
+				ident--;
+			}
+		}
+	};
+	
 	for(auto _stmt = node.stmts.cbegin(); _stmt != node.stmts.cend(); _stmt++){
 		(*_stmt)->accept(*this);
-		main += buffer;
+		add_to_main(buffer);
 	}
 	
 	std::ifstream in("src/activation_records.cpp");
@@ -154,33 +183,33 @@ void visitor::visit(const program& node) const{
 		code += line + "\n";
 	} while(line.find("int main") == string::npos);
 	
-	code += main;
-	
 	for(auto& func : function_code){
 		const string& func_label = func.first;
 		string& param_name = func.second.first;
 		expr& e = *func.second.second;
-		code += func_label + ": {\n";
-		code += "parameter = pop_parameter();\n";
+		add_to_main(func_label + ": {\n");
+		add_to_main("parameter = pop_parameter();\n");
 		current_parameter = param_name;
 		solve_expr(this, e, func_label + "_impl", "result");
 		current_parameter = "";
-		code += buffer;
-		code += "next_label = pop_function_call();\n";
-		code += "set_return_value(result);\n";
-		code += "goto transfer;\n";
-		code += "}\n";
+		add_to_main(buffer);
+		add_to_main("next_label = pop_function_call();\n");
+		add_to_main("set_return_value(result);\n");
+		add_to_main("goto transfer;\n");
+		add_to_main("}\n");
 	}
 	
-	code += "transfer:\n";
-	code += "switch(next_label){\n";
+	add_to_main("transfer:\n");
+	add_to_main("switch(next_label){\n");
 	for(string& label : labels){
-		code += "\tcase " + label + ":\n";
-		code += "\t\tgoto " + label + ";\n";
-		code += "\t\tbreak;\n";
+		add_to_main("case " + label + ":\n");
+		add_to_main("\tgoto " + label + ";\n");
+		add_to_main("\tbreak;\n");
 	}
-	code += "}\n";
-
+	add_to_main("}\n");
+	
+	code += main;
+	
 	while(std::getline(std::cin, line)){
 		code += line + "\n";
 	}
@@ -188,6 +217,7 @@ void visitor::visit(const program& node) const{
 	cin.rdbuf(cinbuf);
 	
 	buffer = code;
+	
 	std::cout << buffer;
 }
 
@@ -238,9 +268,8 @@ void visitor::visit(const read_stmt& node) const{
 	labels.push_back(label);
 	string code = label + ":\n";
 	int var_count = 0;
-	for(variable* p_var : *node.var_list){
+	for(variable* var : *node.var_list){
 		code += "{\n";
-		const variable& var = *p_var;
 		get_var_idxs(this, label + "_" + to_string(var_count++), var->idx1, var->idx2);
 		code += buffer;
 		code += "read(\"" + *var->name + "\", idx1.content._int, idx2.content._int);\n";
@@ -254,9 +283,8 @@ void visitor::visit(const input_stmt& node) const{
 	labels.push_back(label);
 	string code = label + ":\n";
 	int var_count = 0;
-	for(variable* p_var : *node.var_list){
+	for(variable* var : *node.var_list){
 		code += "{\n";
-		const variable& var = *p_var;
 		get_var_idxs(this, label + "_" + to_string(var_count++), var->idx1, var->idx2);
 		code += buffer;
 		code += "input(\"" + *var->name + "\", idx1.content._int, idx2.content._int);\n";

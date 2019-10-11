@@ -107,6 +107,5 @@ label next_label;
 value parameter;
 
 int main(){
-	
 }
 
