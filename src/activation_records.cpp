@@ -15,11 +15,17 @@ label next_label;
 struct value;
 struct record;
 
+value parameter;
+
 void verify_index(value val);
+int to_index(value val);
 
 void push_parameter(value val);
+value pop_parameter();
 void push_function_call(label lab);
 label pop_function_call();
+value get_return_value();
+void set_return_value(value val);
 
 void let(char* name, int id1, int id2, value val);
 void def(char* name, label lab);
@@ -55,9 +61,6 @@ value RND(value val);
 value SIN(value val);
 value SQR(value val);
 value TAN(value val);
-
-value get_return_value();
-void set_return_value(value val);
 
 int main(){
 	

@@ -95,6 +95,30 @@ vector<string> labels;
 map<int, pair<string, string>> calls; // (idx, (parameter_expr, function_name))
 map<string, pair<string, expr*> > function_code; // (label, (parameter_name, code))
 string buffer;
+string current_parameter;
+
+void get_var_idxs(const visitor* vis, string label, const expr* idx1, const expr* idx2){
+	string code;
+	if(idx1 != nullptr){
+		solve_expr(vis, *idx1, label + "_idx1", "idx1");
+		code += buffer;
+		code += verify_index("idx1");
+	}
+	else{
+		code += create_default_index("idx1");
+	}
+	if(idx2 != nullptr){		
+		code += "push_value(idx1);\n";
+		solve_expr(vis, *idx2, label + "_idx2", "idx2");
+		code += buffer;
+		code += verify_index("idx2");
+		code += "idx1 = pop_value();\n";
+	}
+	else{
+		code += create_default_index("idx2");
+	}
+	buffer = code;
+}
 
 void visitor::visit(const position& node) const{ }
 
@@ -132,6 +156,22 @@ void visitor::visit(const program& node) const{
 	
 	code += main;
 	
+	for(auto& func : function_code){
+		const string& func_label = func.first;
+		string& param_name = func.second.first;
+		expr& e = *func.second.second;
+		code += func_label + ": {\n";
+		code += "parameter = pop_parameter();\n";
+		current_parameter = param_name;
+		solve_expr(this, e, func_label + "_impl", "result");
+		current_parameter = "";
+		code += buffer;
+		code += "next_label = pop_function_call();\n";
+		code += "set_return_value(result);\n";
+		code += "goto transfer;\n";
+		code += "}\n";
+	}
+	
 	code += "transfer:\n";
 	code += "switch(next_label){\n";
 	for(string& label : labels){
@@ -139,7 +179,7 @@ void visitor::visit(const program& node) const{
 		code += "\t\tgoto " + label + ";\n";
 		code += "\t\tbreak;\n";
 	}
-	code += "}";
+	code += "}\n";
 
 	while(std::getline(std::cin, line)){
 		code += line + "\n";
@@ -164,35 +204,17 @@ void visitor::visit(const let_stmt& node) const{
 	labels.push_back(label);
 	const auto& var = node.var;
 	const auto& val = node.val;
-	string code = label + ":\n";
-	if(var->idx1 != nullptr){		
-		solve_expr(this, *var->idx1, label + "_idx1", "idx1");
-		code += buffer;
-		code += verify_index("idx1");
-		buffer.clear();
-	}
-	else{
-		code += create_default_index("idx1");
-	}
-	if(var->idx2 != nullptr){		
-		solve_expr(this, *var->idx2, label + "_idx2", "idx2");
-		code += buffer;
-		code += verify_index("idx2");
-		buffer.clear();
-	}
-	else{
-		code += create_default_index("idx2");
-	}
+	string code = label + ": {\n";
+	get_var_idxs(this, label, var->idx1, var->idx2);
+	code += buffer;
+	code += "push_value(idx1);\n";
+	code += "push_value(idx2);\n";
 	solve_expr(this, *val, label + "_val", "target");
 	code += buffer;
-	string idx1 = "idx1", idx2 = "idx2";
-	if(var->idx1 != nullptr){
-		idx1 += ".content._int";
-	}
-	if(var->idx2 != nullptr){
-		idx2 += ".content._int";
-	}
-	code += "let(\"" + *var->name + "\", " + idx1 + ", " + idx2 + ", target);\n";
+	code += "idx2 = pop_value();\n";
+	code += "idx1 = pop_value();\n";
+	code += "let(\"" + *var->name + "\", idx1.content._int, idx2.content._int, target);\n";
+	code += "}\n";
 	buffer = code;
 }
 
@@ -225,11 +247,12 @@ void visitor::visit(const goto_stmt& node) const{
 void visitor::visit(const if_stmt& node) const{
 	string label = "l" + to_string(node.line);
 	labels.push_back(label);
-	string code = label + ":\n";
+	string code = label + ": {\n";
 	string target_label = "l" + to_string(node.target_line);
 	solve_expr(this, *node.condition, label + "_condition", "condition");
 	code += buffer; //TODO verify if condition is bool or let the program convert?
 	code += "if(condition.content._bool) goto " + target_label + ";\n";
+	code += "}\n";
 	buffer = code;
 }
 
@@ -269,33 +292,11 @@ void visitor::visit(const dim_stmt& node) const{
 	string label = "l" + to_string(node.line);
 	labels.push_back(label);
 	const auto& var = node.var;
-	string code = label + ":\n";
-	if(var->idx1 != nullptr){		
-		solve_expr(this, *var->idx1, label + "_idx1", "idx1");
-		code += buffer;
-		code += verify_index("idx1");
-		buffer.clear();
-	}
-	else{
-		code += create_default_index("idx1");
-	}
-	if(var->idx2 != nullptr){		
-		solve_expr(this, *var->idx2, label + "_idx2", "idx2");
-		code += buffer;
-		code += verify_index("idx2");
-		buffer.clear();
-	}
-	else{
-		code += create_default_index("idx2");
-	}
-	string idx1 = "idx1", idx2 = "idx2";
-	if(var->idx1 != nullptr){
-		idx1 += ".content._int";
-	}
-	if(var->idx2 != nullptr){
-		idx2 += ".content._int";
-	}
-	code += "dim(\"" + *var->name + "\", " + idx1 + ", " + idx2 + ");\n";
+	string code = label + ": {\n";
+	get_var_idxs(this, label, var->idx1, var->idx2);
+	code += buffer;
+	code += "dim(\"" + *var->name + "\", idx1.content._int , idx2.content._int);\n";
+	code += "}\n";
 	buffer = code;
 }
 
@@ -343,7 +344,33 @@ void visitor::visit(const function_expr& node) const{
 	buffer = code;
 }
 
-void visitor::visit(const variable& node) const{ }
+void visitor::visit(const variable& node) const{
+	if(*node.name == current_parameter){
+		if(node.idx1 != nullptr || node.idx2 != nullptr){
+			std::cerr << "Parameter cannot be used as array" << std::endl;
+			exit(-1);
+		}
+		buffer = "parameter";
+	} 
+	else{
+		string code = "get(\"" + *node.name + "\", ";
+		if(node.idx1 != nullptr){
+			node.idx1->accept(*this);
+			code += "to_index(" + buffer + "), ";
+		}
+		else{
+			code += "-1, ";
+		}
+		if(node.idx2 != nullptr){
+			node.idx2->accept(*this);
+			code += "to_index(" + buffer + "))";
+		}
+		else{
+			code += "-1)";
+		}
+		buffer = code;
+	}
+}
 
 template<class T> void visitor::visit(const literal_expr<T>& node) const{
 	buffer = to_string(node.value);
@@ -386,6 +413,8 @@ string verify_index(string idx){
 }
 
 string create_default_index(string idx){
-	return "int " + idx + " = -1;\n";
+	string code = "value " + idx + ";\n";
+	code += idx + ".content._int = -1;\n";
+	code += idx + ".value_type = Int;\n";
+	return code;
 }
-
