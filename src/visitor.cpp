@@ -31,7 +31,7 @@ string to_string(yytokentype value){
 		{(yytokentype)DIVIDE, "/"},
 		{(yytokentype)END, "END"},
 		{(yytokentype)ENDL, "ENDL"},
-		{(yytokentype)EQUALS, "EQUALS"},
+		{(yytokentype)EQUALS, "=="},
 		{(yytokentype)EXP, "EXP"},
 		{(yytokentype)EXPONENTIAL, "^"},
 		{(yytokentype)FLOAT, "FLOAT"},
@@ -39,8 +39,8 @@ string to_string(yytokentype value){
 		{(yytokentype)FUNCTION, "FUNCTION"},
 		{(yytokentype)GOSUB, "GOSUB"},
 		{(yytokentype)GOTO, "GOTO"},
-		{(yytokentype)GT, "GT"},
-		{(yytokentype)GTE, "GTE"},
+		{(yytokentype)GT, ">"},
+		{(yytokentype)GTE, ">="},
 		{(yytokentype)IF, "IF"},
 		{(yytokentype)INPUT, "INPUT"},
 		{(yytokentype)INT, "INT"},
@@ -386,13 +386,13 @@ void visitor::visit(const binary_expr& node) const{
 	string code = buffer;
 	code += " " + to_string(node.tok.id) + " ";
 	node.right->accept(*this);
-	buffer = code + buffer;
+	buffer = "(" + code + buffer + ")";
 }
 
 void visitor::visit(const unary_expr& node) const{
 	string code = to_string(node.tok.id);
 	node.target->accept(*this);
-	buffer = code + buffer;
+	buffer = "(" + code + buffer + ")";
 }
 
 void visitor::visit(const function_expr& node) const{
