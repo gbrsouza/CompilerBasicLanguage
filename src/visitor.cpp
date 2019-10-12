@@ -97,32 +97,14 @@ map<string, pair<string, expr*> > function_code; // (label, (parameter_name, cod
 string buffer;
 string current_parameter;
 
-void get_var_idxs(const visitor* vis, string label, const expr* idx1, const expr* idx2){
-	string code;
-	if(idx1 != nullptr){
-		solve_expr(vis, *idx1, label + "_idx1", "idx1");
-		code += buffer;
-		code += verify_index("idx1");
-	}
-	else{
-		code += create_default_index("idx1");
-	}
-	if(idx2 != nullptr){		
-		code += "push_value(idx1);\n";
-		solve_expr(vis, *idx2, label + "_idx2", "idx2");
-		code += buffer;
-		code += verify_index("idx2");
-		code += "idx1 = pop_value();\n";
-	}
-	else{
-		code += create_default_index("idx2");
-	}
-	buffer = code;
-}
+void get_var_idxs(const visitor* vis, string label, const expr* idx1, const expr* idx2);
+void solve_expr(const visitor* vis, const expr& exp, string label, string target);
+string verify_index(string idx);
+string create_default_index(string idx);
 
-void visitor::visit(const position& node) const{ }
+void visitor::visit(const position& ) const{ }
 
-void visitor::visit(const token& node) const{ }
+void visitor::visit(const token& ) const{ }
 
 void visitor::visit(const program& node) const{
 	string code, main;
@@ -207,6 +189,7 @@ void visitor::visit(const program& node) const{
 		add_to_main("\tbreak;\n");
 	}
 	add_to_main("}\n");
+	add_to_main("invalid: undefined_control_flow();\n");
 	
 	code += main;
 	
@@ -319,7 +302,7 @@ void visitor::visit(const if_stmt& node) const{
 	string code = label + ": {\n";
 	string target_label = "l" + to_string(node.target_line);
 	solve_expr(this, *node.condition, label + "_condition", "condition");
-	code += buffer; //TODO verify if condition is bool or let the program convert?
+	code += buffer;
 	code += "if(condition.content._bool) goto " + target_label + ";\n";
 	code += "}\n";
 	buffer = code;
@@ -369,9 +352,73 @@ void visitor::visit(const dim_stmt& node) const{
 	buffer = code;
 }
 
-void visitor::visit(const next_stmt& node) const{ }
+void visitor::visit(const next_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string label_exit_loop = label + "_exit_loop";
+	labels.push_back(label_exit_loop);
+	const string& var_name = *node.var->name;
+	string code = label + ":\n";
+	code += "verify_loop_variable(\"" + var_name + "\");\n";
+	code += "pop_loop_variable();\n";
+	code += "next_label = pop_loop_label();\n";
+	code += "push_next_stmt_label(" + label_exit_loop + ");\n";
+	code += "goto transfer;\n";
+	code += label_exit_loop + ":\n";
+	buffer = code;
+}
 
-void visitor::visit(const for_stmt& node) const{ }
+void visitor::visit(const for_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ": {\n";
+	string label_condition = label + "_condition";
+	labels.push_back(label_condition);
+	string label_step = label + "_step";
+	labels.push_back(label_step);
+	
+	const string& var_name = *node.var->name;
+	const expr* initial_value = node.initial_value;
+	const expr* condition = node.condition;
+	const expr* step = node.step;
+	
+	solve_expr(this, *initial_value, label + "_initial", "initial");
+	code += buffer;
+	code += "let(\"" + var_name + "\", -1, -1, initial);\n";
+	code += "}\n";
+	code += "{\n";
+	if(step == nullptr){
+		code += "value step;\n";
+		code += "step = to_value(1);\n";
+	}
+	else{
+		solve_expr(this, *step, label + "_step", "step");
+		code += buffer;
+	}
+	code += "push_loop_step(step);\n";
+	code += "push_next_stmt_label(invalid);\n";
+	code += "}\n";
+	code += "goto " + label_condition + ";\n";
+	code += label_step + ": {\n";
+	code += "label exit_loop_label = pop_next_stmt_label();\n";
+	code += "value step = pop_loop_step();\n";
+	node.var->accept(*this);
+	code += "let(\"" + var_name + "\", -1, -1, " + buffer + " + step);\n";
+	code += "push_loop_step(step);\n";
+	code += "push_next_stmt_label(exit_loop_label);\n";
+	code += "}\n";
+	code += label_condition + ": {\n";
+	solve_expr(this, *condition, label + "_condition", "for_condition"); // TODO: fix condition check
+	code += buffer;
+	code += "next_label = pop_next_stmt_label();\n";
+	code += "value step = pop_loop_step();\n";
+	code += "if(!for_condition.content._bool) goto transfer;\n";
+	code += "push_loop_step(step);\n";
+	code += "push_loop_label(" + label_step + ");\n";
+	code += "push_loop_variable(\"" + var_name + "\");\n";
+	code += "}\n";
+	buffer = code;
+}
 
 void visitor::visit(const stop_stmt& node) const{
 	string label = "l" + to_string(node.line);
@@ -444,6 +491,29 @@ template<class T> void visitor::visit(const literal_expr<T>& node) const{
 template void visitor::visit<string*>(const literal_expr<string*>& node) const;
 template void visitor::visit<int>(const literal_expr<int>& node) const;
 template void visitor::visit<bool>(const literal_expr<bool>& node) const;
+
+void get_var_idxs(const visitor* vis, string label, const expr* idx1, const expr* idx2){
+	string code;
+	if(idx1 != nullptr){
+		solve_expr(vis, *idx1, label + "_idx1", "idx1");
+		code += buffer;
+		code += verify_index("idx1");
+	}
+	else{
+		code += create_default_index("idx1");
+	}
+	if(idx2 != nullptr){		
+		code += "push_value(idx1);\n";
+		solve_expr(vis, *idx2, label + "_idx2", "idx2");
+		code += buffer;
+		code += verify_index("idx2");
+		code += "idx1 = pop_value();\n";
+	}
+	else{
+		code += create_default_index("idx2");
+	}
+	buffer = code;
+}
 
 void solve_expr(const visitor* vis, const expr& exp, string label, string target){
 	string code = "value " + target + ";\n";
