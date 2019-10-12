@@ -66,8 +66,4 @@ extern template void visitor::visit<bool>(const literal_expr<bool>& node) const;
 
 }
 
-extern void solve_expr(const ast::visitor* vis, const ast::expr& exp, string label, string target);
-extern string verify_index(string idx);
-extern string create_default_index(string idx);
-
 #endif
