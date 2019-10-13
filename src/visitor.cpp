@@ -387,6 +387,11 @@ void visitor::visit(const for_stmt& node) const{
 	code += "let(\"" + var_name + "\", -1, -1, initial);\n";
 	code += "}\n";
 	code += "{\n";
+	solve_expr(this, *condition, label + "_last", "last");
+	code += buffer;
+	code += "push_loop_last_value(last);\n";
+	code += "}\n";
+	code += "{\n";
 	if(step == nullptr){
 		code += "value step;\n";
 		code += "step = to_value(1);\n";
@@ -408,11 +413,14 @@ void visitor::visit(const for_stmt& node) const{
 	code += "push_next_stmt_label(exit_loop_label);\n";
 	code += "}\n";
 	code += label_condition + ": {\n";
-	solve_expr(this, *condition, label + "_condition", "for_condition"); // TODO: fix condition check
-	code += buffer;
 	code += "next_label = pop_next_stmt_label();\n";
 	code += "value step = pop_loop_step();\n";
-	code += "if(!for_condition.content._bool) goto transfer;\n";
+	code += "value last = pop_loop_last_value();\n";
+	code += "bool condition_1 = is_negative(step) && (" + buffer + " >= last).content._bool;\n";
+	code += "bool condition_2 = !is_negative(step) && (" + buffer + " <= last).content._bool)\n";
+	code += "bool condition = condition_1 || condition_2;\n";
+	code += "if(!condition) goto transfer;\n";
+	code += "push_loop_last_value(last);\n";
 	code += "push_loop_step(step);\n";
 	code += "push_loop_label(" + label_step + ");\n";
 	code += "push_loop_variable(\"" + var_name + "\");\n";

@@ -46,6 +46,7 @@ struct record{
 		for_label,
 		for_variable,
 		for_step,
+		for_last,
 		next_stmt_label,
 		stored_value,
 	} record_type;
@@ -76,6 +77,8 @@ void push_loop_label(label lab);
 label pop_loop_label();
 void push_loop_step(value val);
 value pop_loop_step();
+void push_loop_last_value(value val);
+value pop_loop_last_value();
 void push_next_stmt_label(label lab);
 label pop_next_stmt_label();
 
@@ -89,6 +92,8 @@ void print(value val, bool separator);
 void read(const char* name, int id1, int id2);
 void input(const char* name, int id1, int id2);
 void data(value val);
+
+bool is_negative(value val);
 
 value to_value(int val);
 value to_value(double val);
@@ -149,6 +154,10 @@ int to_index(value val){
 void undefined_control_flow(){
 	cerr << "Error: undefined control flow" << endl;
 	exit(-1);
+}
+
+bool verify_numeric(value val){
+	return (val.value_type == value::Int || val.value_type == value::Float); 
 }
 
 stack<record> st;
@@ -228,6 +237,8 @@ void push_loop_label(label lab){ } // TODO
 label pop_loop_label(){ } // TODO
 void push_loop_step(value val){ } // TODO
 value pop_loop_step(){ } // TODO
+void push_loop_last_value(value val){ } // TODO
+value pop_loop_last_value(){ } // TODO
 void push_next_stmt_label(label lab){ } // TODO
 label pop_next_stmt_label(){ } // TODO
 
@@ -245,6 +256,17 @@ void input(const char* name, int id1, int id2){ } // TODO
 
 void data(value val){
 	data_buffer.push(val);
+}
+
+bool is_negative(value val){
+	if(!verify_numeric){
+		cerr << "Error: step is not numeric." << endl;
+		exit(-1);
+	}
+	if(val.value_type == value::Int){
+		return val.content._int < 0;
+	}
+	return val.content._double < 0;
 }
 
 value to_value(int val){
@@ -298,10 +320,6 @@ value operator==(value left, value right){ } // TODO
 value operator!=(value left, value right){ } // TODO
 value operator||(value left, value right){ } // TODO
 value operator&&(value left, value right){ } // TODO
-
-bool verify_numeric(value val){
-	return (val.value_type == value::Int || val.value_type == value::Float); 
-}
 
 value ABS(value val){
 	if(!verify_numeric(val)){
