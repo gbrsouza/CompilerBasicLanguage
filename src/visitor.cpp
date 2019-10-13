@@ -143,6 +143,8 @@ void visitor::visit(const program& node) const{
 		add_to_main(buffer);
 	}
 	
+	labels.push_back("invalid");
+	
 	std::ifstream in("src/activation_records.cpp");
 	
 	using std::cin;
@@ -202,6 +204,8 @@ void visitor::visit(const program& node) const{
 	buffer = code;
 	
 	std::cout << buffer;
+	
+	labels.clear();
 }
 
 void visitor::visit(const end_stmt& node) const{
@@ -327,6 +331,7 @@ void visitor::visit(const return_stmt& node) const{
 	string code = label + ":\n";
 	code += "next_label = pop_function_call();\n";
 	code += "goto transfer;\n";
+	buffer = code;
 }
 
 void visitor::visit(const def_stmt& node) const{
@@ -417,7 +422,7 @@ void visitor::visit(const for_stmt& node) const{
 	code += "value step = pop_loop_step();\n";
 	code += "value last = pop_loop_last_value();\n";
 	code += "bool condition_1 = is_negative(step) && (" + buffer + " >= last).content._bool;\n";
-	code += "bool condition_2 = !is_negative(step) && (" + buffer + " <= last).content._bool)\n";
+	code += "bool condition_2 = !is_negative(step) && (" + buffer + " <= last).content._bool;\n";
 	code += "bool condition = condition_1 || condition_2;\n";
 	code += "if(!condition) goto transfer;\n";
 	code += "push_loop_last_value(last);\n";

@@ -14,7 +14,6 @@ using std::stack;
 using std::string;
 
 enum label{
-invalid,
 };
 
 struct value{
@@ -33,29 +32,20 @@ struct value{
 		char _char;
 		double _double;
 		bool _bool;
-		value* _array;
-		value** _matrix;
+		struct{
+			int size;
+			value* content;
+		} _array;
+		struct{
+			int size_1;
+			int size_2;
+			value** content; 
+		} _matrix;
 	} content;
-};
-
-struct record{
-	enum{
-		subroutine_label,
-		parameter,
-		return_value,
-		for_label,
-		for_variable,
-		for_step,
-		for_last,
-		next_stmt_label,
-		stored_value,
-	} record_type;
-	
-	union{
-		label lab;
-		value val;
-		string* name;
-	} record_content;
+	value();
+	value(const value& val);
+	value& operator=(const value& val);
+	~value();
 };
 
 void verify_index(value val);
@@ -160,12 +150,42 @@ bool verify_numeric(value val){
 	return (val.value_type == value::Int || val.value_type == value::Float); 
 }
 
+struct record{
+	enum{
+		subroutine_label,
+		parameter,
+		return_value,
+		for_label,
+		for_variable,
+		for_step,
+		for_last,
+		next_stmt_label,
+		stored_value,
+	} record_type;
+	
+	union{
+		label lab;
+		value* val;
+		string* name;
+	} record_content;
+	
+	record(){
+		record_type = stored_value;
+		record_content.val = nullptr;
+	}
+	
+	record(const record& rec){
+		record_type = rec.record_type;
+		record_content = rec.record_content;
+	}
+};
+
 stack<record> st;
 
 void push_parameter(value val){
 	record new_record;
 	new_record.record_type = record::parameter;
-	new_record.record_content.val = val;
+	new_record.record_content.val = new value(val);
 	st.push(new_record);
 }
 
@@ -175,8 +195,10 @@ value pop_parameter(){
 		cerr << "Error: tried to pop incompatible type from stack as parameter" << endl;
 		exit(-1);
 	}
+	value val(*top.record_content.val);
+	delete top.record_content.val;
 	st.pop();
-	return top.record_content.val;
+	return val;
 }
 
 void push_function_call(label lab){
@@ -199,7 +221,7 @@ label pop_function_call(){
 void set_return_value(value val){
 	record new_record;
 	new_record.record_type = record::return_value;
-	new_record.record_content.val = val;
+	new_record.record_content.val = new value(val);
 	st.push(new_record);
 }
 
@@ -209,14 +231,16 @@ value get_return_value(){
 		cerr << "Error: tried to pop incompatible type from stack as return value" << endl;
 		exit(-1);
 	}
+	value val(*top.record_content.val);
+	delete top.record_content.val;
 	st.pop();
-	return top.record_content.val;
+	return val;
 }
 
 void push_value(value val){
 	record new_record;
 	new_record.record_type = record::stored_value;
-	new_record.record_content.val = val;
+	new_record.record_content.val = new value(val);
 	st.push(new_record);
 }
 
@@ -226,40 +250,346 @@ value pop_value(){
 		cerr << "Error: tried to pop incompatible type from stack as value" << endl;
 		exit(-1);
 	}
+	value val(*top.record_content.val);
+	delete top.record_content.val;
 	st.pop();
-	return top.record_content.val;
+	return val;
 }
 
-void push_loop_variable(const char* name){ } // TODO
-void verify_loop_variable(const char* name){ } // TODO
-void pop_loop_variable(){ } // TODO
-void push_loop_label(label lab){ } // TODO
-label pop_loop_label(){ } // TODO
-void push_loop_step(value val){ } // TODO
-value pop_loop_step(){ } // TODO
-void push_loop_last_value(value val){ } // TODO
-value pop_loop_last_value(){ } // TODO
-void push_next_stmt_label(label lab){ } // TODO
-label pop_next_stmt_label(){ } // TODO
+void push_loop_variable(const char* name){
+	record new_record;
+	new_record.record_type = record::for_variable;
+	new_record.record_content.name = new string(name);
+	for(char& c : *new_record.record_content.name){
+		c = (char) tolower(c);
+	}
+	st.push(new_record);
+}
 
-label get_def(const char* name){ } // TODO
-value get_var(const char* name, int id1, int id2){ } // TODO
+void verify_loop_variable(const char* name){
+	record& top = st.top();
+	if(top.record_type != record::for_variable){
+		cerr << "Error: Next command not expected" << endl;
+		exit(-1);
+	}
+	string s_name(name);
+	for(char& c : s_name){
+		c = (char) tolower(c);
+	}
+	if(*top.record_content.name != s_name){
+		cerr << "Error: Next command on unexpected variable" << endl;
+		exit(-1);
+	}
+}
+
+void pop_loop_variable(){
+	st.pop();
+}
+
+void push_loop_label(label lab){
+	record new_record;
+	new_record.record_type = record::for_label;
+	new_record.record_content.lab = lab;
+	st.push(new_record);
+}
+
+label pop_loop_label(){
+	record top = st.top();
+	if(top.record_type != record::for_label){
+		cerr << "Error: tried to pop incompatible type from stack as loop label" << endl;
+		exit(-1);
+	}
+	st.pop();
+	return top.record_content.lab;
+}
+
+void push_loop_step(value val){
+	record new_record;
+	new_record.record_type = record::for_step;
+	new_record.record_content.val = new value(val);
+	st.push(new_record);
+}
+
+value pop_loop_step(){
+	record top = st.top();
+	if(top.record_type != record::for_step){
+		cerr << "Error: tried to pop incompatible type from stack as loop step" << endl;
+		exit(-1);
+	}
+	value val(*top.record_content.val);
+	delete top.record_content.val;
+	st.pop();
+	return val;
+}
+
+void push_loop_last_value(value val){
+	record new_record;
+	new_record.record_type = record::for_last;
+	new_record.record_content.val = new value(val);
+	st.push(new_record);
+}
+
+value pop_loop_last_value(){
+	record top = st.top();
+	if(top.record_type != record::for_last){
+		cerr << "Error: tried to pop incompatible type from stack as loop bound" << endl;
+		exit(-1);
+	}
+	value val(*top.record_content.val);
+	delete top.record_content.val;
+	st.pop();
+	return val;
+}
+
+void push_next_stmt_label(label lab){
+	record new_record;
+	new_record.record_type = record::next_stmt_label;
+	new_record.record_content.lab = lab;
+	st.push(new_record);
+}
+
+label pop_next_stmt_label(){
+	record top = st.top();
+	if(top.record_type != record::next_stmt_label){
+		cerr << "Error: tried to pop incompatible type from stack as NEXT statement label" << endl;
+		exit(-1);
+	}
+	st.pop();
+	return top.record_content.lab;
+}
+
+string value_type_to_string(const value& val){
+	switch(val.value_type){
+		case value::Int:
+			return "Int";
+		case value::Float:
+			return "Float";
+		case value::Char:
+			return "Char";
+		case value::Bool:
+			return "Bool";
+		case value::String:
+			return "String";
+		case value::Array1d:
+			return "1D Array";
+		case value::Array2d:
+			return "2D Array";
+	}
+	return "<<undefined>>";
+}
+
+void destroy(value& val){
+	if(val.value_type == value::String){
+		delete val.content._string;
+	}
+	if(val.value_type == value::Array1d){
+		delete[] val.content._array.content;
+	}
+	if(val.value_type == value::Array2d){
+		for(int i = 0; i < val.content._matrix.size_1; i++){
+			delete[] val.content._matrix.content[i];
+		}
+		delete[] val.content._matrix.content;
+	}
+}
+
+value::value(){
+	value_type = Int;
+	content._int = 0;
+}
+
+value::value(const value& val){
+	*this = val;
+}
+value& value::operator=(const value& val){
+	value_type = val.value_type;
+	if(val.value_type == value::String){
+		content._string = new string(*val.content._string);
+	}
+	else if(val.value_type == value::Array1d){
+		content._array.size = val.content._array.size;
+		content._array.content = new value[content._array.size];
+		for(int i = 0; i < content._array.size; i++){
+			content._array.content[i] = val.content._array.content[i];
+		}
+	}
+	else if(val.value_type == value::Array2d){
+		content._matrix.size_1 = val.content._matrix.size_1;
+		content._matrix.content = new value*[content._matrix.size_1];
+		content._matrix.size_2 = val.content._matrix.size_2;
+		for(int i = 0; i < content._matrix.size_1; i++){
+			content._matrix.content[i] = new value[content._matrix.size_2];
+			for(int j = 0; j < content._matrix.size_2; j++){
+				content._matrix.content[i][j] = val.content._matrix.content[i][j];
+			}
+		}
+	}
+	else{
+		content = val.content;
+	}
+	return *this;
+}
+
+value::~value(){
+	destroy(*this);
+}
 
 queue<value> data_buffer;
+value* memory[286];
 
-void let(const char* name, int id1, int id2, value val){ } // TODO
-void def(const char* name, label lab){ } // TODO
-void dim(const char* name, int id1, int id2){ } // TODO
-void print(value val, bool separator){ } // TODO
-void read(const char* name, int id1, int id2){ } // TODO
-void input(const char* name, int id1, int id2){ } // TODO
+value& from_memory(const char* name){
+	int idx;
+	if(name[1] == '\0'){
+		idx = tolower(name[0]) - 'a';
+	}
+	else{
+		idx = 26 + (tolower(name[0] - 'a') * 10 + name[1] - '0');
+	}
+	if(memory[idx] == nullptr){
+		memory[idx] = new value;
+		memory[idx]->value_type = value::Int;
+		memory[idx]->content._int = 0;
+	}
+	return *memory[idx];
+}
+
+void check_dim(const value& val, int id1, int id2){
+	if(id2 != -1 && val.value_type != value::Array2d){
+		cerr << "Error: tried to use " << value_type_to_string(val) << " as two dimensional array" << endl;
+		exit(-1);
+	}
+	if(id1 != -1 && val.value_type != value::Array1d){
+		cerr << "Error: tried to use " << value_type_to_string(val) << " as one dimensional array" << endl;
+		exit(-1);
+	}
+}
+
+value& access_reference(value& val, int id1, int id2){
+	if(id2 != -1){
+		if(id1 < 0 || id1 >= val.content._matrix.size_1 || id2 < 0 || id2 >= val.content._matrix.size_2){
+			cerr << "Error: tried to access position (" << id1 << ", " << id2 << ") of matrix with dimensions ("
+				<< val.content._matrix.size_1 << ", " << val.content._matrix.size_2 << ")" << endl;
+			exit(-1);
+		}
+		return val.content._matrix.content[id1][id2];
+	}
+	if(id1 != -1){
+		if(id1 < 0 || id1 >= val.content._array.size){
+			cerr << "Error: tried to access position (" << id1 << ") of array with dimension ("
+				<< val.content._array.size << ")" << endl;
+			exit(-1);
+		}
+		return val.content._array.content[id1];
+	}
+	return val;
+}
+
+label function_label[26] = { invalid,
+invalid, invalid, invalid, invalid, invalid, invalid,
+invalid, invalid, invalid, invalid, invalid, invalid,
+invalid, invalid, invalid, invalid, invalid, invalid,
+invalid, invalid, invalid, invalid, invalid, invalid,
+};
+
+label get_def(const char* name){
+	return function_label[tolower(name[2]) - 'a'];
+}
+
+value get_var(const char* name, int id1, int id2){
+	value& var = from_memory(name);
+	check_dim(var, id1, id2);
+	value& target = access_reference(var, id1, id2);
+	return target;
+}
+
+void let(const char* name, int id1, int id2, value val){
+	if(val.value_type == value::Array1d || val.value_type == value::Array2d){
+		cerr << "Error: Tried to assign variable with " << value_type_to_string(val) << endl;
+		exit(-1);
+	}
+	value& var = from_memory(name);
+	check_dim(var, id1, id2);
+	value& target = access_reference(var, id1, id2);
+	destroy(target);
+	target = val;
+}
+
+void def(const char* name, label lab){
+	function_label[tolower(name[2]) - 'a'] = lab;
+}
+
+void dim(const char* name, int id1, int id2){
+	value& target = from_memory(name);
+	destroy(target);
+	
+	if(id2 != -1){
+		target.value_type = value::Array2d;
+		target.content._matrix.size_1 = id1;
+		target.content._matrix.content = new value*[id1];
+		target.content._matrix.size_2 = id2;
+		for(int i = 0; i < id1; i++){
+			target.content._matrix.content[i] = new value[id2];
+			for(int j = 0; j < id2; j++){
+				target.content._matrix.content[i][j].value_type = value::Int;
+				target.content._matrix.content[i][j].content._int = 0;
+			}
+		}
+	}
+	else if(id1 != -1){
+		target.value_type = value::Array1d;
+		target.content._array.size = id1;
+		target.content._array.content = new value[id1];
+		for(int i = 0; i < id1; i++){
+			target.content._array.content[i].value_type = value::Int;
+			target.content._array.content[i].content._int = 0;
+		}
+	}
+	else{
+		target.value_type = value::Int;
+		target.content._int = 0;
+	}
+}
+
+void print(value val, bool separator){ // TODO use separator to format correctly
+	if(val.value_type == value::Array1d || val.value_type == value::Array2d){
+		cerr << "Error: Print command of " << value_type_to_string(val) << " is not defined" << endl;
+		exit(-1);
+	}
+	if(val.value_type == value::String){
+		cout << *val.content._string;
+	}
+	else if(val.value_type == value::Char){
+		cout << val.content._char;
+	}
+	else if(val.value_type == value::Int){
+		cout << val.content._int;
+	}
+	else if(val.value_type == value::Float){
+		cout << val.content._double;
+	}
+	else if(val.value_type == value::Bool){
+		cout << (val.content._bool ? "True" : "False");
+	}
+	cout << endl;
+}
+
+void read(const char* name, int id1, int id2){
+	if(data_buffer.empty()){
+		cerr << "Error: read command reached with empty data buffer" << endl;
+		exit(-1);
+	}
+	let(name, id1, id2, data_buffer.front());
+	data_buffer.pop();
+}
+
+void input(const char* , int , int ){ } // TODO
 
 void data(value val){
 	data_buffer.push(val);
 }
 
 bool is_negative(value val){
-	if(!verify_numeric){
+	if(!verify_numeric(val)){
 		cerr << "Error: step is not numeric." << endl;
 		exit(-1);
 	}
@@ -304,22 +634,210 @@ value to_value(const char* val){
 	return ret;
 }
 
-value operator-(value target){ } // TODO
-value operator!(value target){ } // TODO
-value operator+(value left, value right){ } // TODO
-value operator-(value left, value right){ } // TODO
-value operator*(value left, value right){ } // TODO
-value operator/(value left, value right){ } // TODO
-value operator%(value left, value right){ } // TODO
-value operator^(value left, value right){ } // TODO
-value operator<(value left, value right){ } // TODO
-value operator>(value left, value right){ } // TODO
-value operator<=(value left, value right){ } // TODO
-value operator>=(value left, value right){ } // TODO
-value operator==(value left, value right){ } // TODO
-value operator!=(value left, value right){ } // TODO
-value operator||(value left, value right){ } // TODO
-value operator&&(value left, value right){ } // TODO
+string binary_operator_error(string op, const value& left, const value& right){
+	return "Error: Undefined operator " + op + " between " + 
+		value_type_to_string(left) + " and " + value_type_to_string(right);
+}
+
+double to_double(const value& val){ // receives numeric value and returns double
+	if(val.value_type == value::Int){
+		return (double) val.content._int;
+	}
+	return val.content._double;
+}
+
+value operator-(value target){
+	if(!verify_numeric(target)){
+		cerr << "Error: Undefined unary operator - of " << value_type_to_string(target) << endl;
+		exit(-1);
+	}
+	if(target.value_type == value::Int){
+		target.content._int = -target.content._int;
+	}
+	else{
+		target.content._double = -target.content._double;
+	}
+	return target;
+}
+
+value operator!(value target){
+	if(target.value_type != value::Bool){
+		cerr << "Error: Undefined unary operator ! of " << value_type_to_string(target) << endl;
+		exit(-1);
+	}
+	target.content._bool = !target.content._bool;
+	return target;
+}
+
+value operator+(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("+", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) + to_double(right));
+	}
+	return to_value(left.content._int + right.content._int);
+}
+
+value operator-(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("-", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) - to_double(right));
+	}
+	return to_value(left.content._int - right.content._int);
+}
+
+value operator*(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("*", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) * to_double(right));
+	}
+	return to_value(left.content._int * right.content._int);
+}
+
+value operator/(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("/", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) / to_double(right));
+	}
+	return to_value(left.content._int / right.content._int);
+}
+
+value operator%(value left, value right){
+	if(left.value_type != value::Int || right.value_type != value::Int){
+		cerr << binary_operator_error("%", left, right) << endl;
+		exit(-1);
+	}
+	return to_value(left.content._int % right.content._int);
+}
+
+value operator^(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("^", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(pow(to_double(left), to_double(right)));
+	}
+	return to_value(pow(left.content._int, right.content._int));
+}
+
+value operator<(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("<", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) < to_double(right));
+	}
+	return to_value(left.content._int < right.content._int);
+}
+
+value operator>(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error(">", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) > to_double(right));
+	}
+	return to_value(left.content._int > right.content._int);
+}
+
+value operator<=(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error("<=", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) <= to_double(right));
+	}
+	return to_value(left.content._int <= right.content._int);
+}
+value operator>=(value left, value right){
+	if(!verify_numeric(left) || !verify_numeric(right)){
+		cerr << binary_operator_error(">=", left, right) << endl;
+		exit(-1);
+	}
+	if(left.value_type == value::Float || right.value_type == value::Float){
+		return to_value(to_double(left) >= to_double(right));
+	}
+	return to_value(left.content._int >= right.content._int);
+}
+
+value operator==(value left, value right){
+	if(left.value_type != right.value_type || left.value_type == value::Array1d || left.value_type == value::Array2d){
+		cerr << binary_operator_error("==", left, right) << endl;
+		exit(-1);
+	}
+	bool ret;
+	if(left.value_type == value::Int){
+		ret = (left.content._int == right.content._int);
+	}
+	else if(left.value_type == value::Float){
+		ret = (left.content._double == right.content._double);
+	}
+	else if(left.value_type == value::Char){
+		ret = (left.content._char == right.content._char);
+	}
+	else if(left.value_type == value::Bool){
+		ret = (left.content._bool == right.content._bool);
+	}
+	else{
+		ret = (*left.content._string == *right.content._string);
+	}
+	return to_value(ret);
+}
+
+value operator!=(value left, value right){
+	if(left.value_type != right.value_type || left.value_type == value::Array1d || left.value_type == value::Array2d){
+		cerr << binary_operator_error("!=", left, right) << endl;
+		exit(-1);
+	}
+	bool ret;
+	if(left.value_type == value::Int){
+		ret = (left.content._int != right.content._int);
+	}
+	else if(left.value_type == value::Float){
+		ret = (left.content._double != right.content._double);
+	}
+	else if(left.value_type == value::Char){
+		ret = (left.content._char != right.content._char);
+	}
+	else if(left.value_type == value::Bool){
+		ret = (left.content._bool != right.content._bool);
+	}
+	else{
+		ret = (*left.content._string != *right.content._string);
+	}
+	return to_value(ret);
+}
+
+value operator||(value left, value right){
+	if(left.value_type != value::Bool || right.value_type != value::Bool){
+		cerr << binary_operator_error("||", left, right) << endl;
+		exit(-1);
+	}
+	return to_value(left.content._bool || right.content._bool);
+}
+
+value operator&&(value left, value right){
+	if(left.value_type != value::Bool || right.value_type != value::Bool){
+		cerr << binary_operator_error("&&", left, right) << endl;
+		exit(-1);
+	}
+	return to_value(left.content._bool && right.content._bool);
+}
 
 value ABS(value val){
 	if(!verify_numeric(val)){
