@@ -631,6 +631,11 @@ void input(const char* name, int id1, int id2){
 	std::cin >> input_word;
 	int dot_count = 0;
 	bool is_numeric = true;
+	bool is_neg = false;
+	if(input_word[0] == '-'){
+		input_word = input_word.substr(1);
+		is_neg = true;
+	}
 	for(char c : input_word){
 		if(c == '.'){
 			dot_count++;
@@ -638,15 +643,24 @@ void input(const char* name, int id1, int id2){
 		is_numeric &= (isdigit(c) != 0);
 	}
 	value val;
-	if(is_numeric && dot_count == 1 && input_word[0] != '.' && input_word.back() != '.'){
+	if(!input_word.empty() && is_numeric && dot_count == 1 && input_word[0] != '.' && input_word.back() != '.'){
+		if(is_neg){
+			input_word = string("-") + input_word;
+		}
 		val.value_type = value::Float;
 		val.content._double = std::stod(input_word);
 	}
-	else if(is_numeric && dot_count == 0){
+	else if(!input_word.empty() && is_numeric && dot_count == 0){
+		if(is_neg){
+			input_word = string("-") + input_word;
+		}
 		val.value_type = value::Int;
 		val.content._int = std::stoi(input_word);
 	}
 	else{
+		if(is_neg){
+			input_word = string("-") + input_word;
+		}
 		val.value_type = value::String;
 		val.content._string = new string(input_word);
 	}
