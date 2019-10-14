@@ -443,7 +443,7 @@ value& from_memory(const char* name){
 		idx = tolower(name[0]) - 'a';
 	}
 	else{
-		idx = 26 + (tolower(name[0] - 'a') * 10 + name[1] - '0');
+		idx = 26 + (tolower(name[0]) - 'a') * 10 + (name[1] - '0');
 	}
 	if(memory[idx] == nullptr){
 		memory[idx] = new value;
