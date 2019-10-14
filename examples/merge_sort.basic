@@ -1,25 +1,25 @@
-1  DATA 10, 6, 2, 4, 3, 1, 7, 0, 9, 5, 8
-2  READ N
-3  DIM V(N)
-4  FOR I = 0 TO N-1
-5  READ V(I)
-6  NEXT I
-7 
-8  LET C = 1
-9  IF C >= N THEN 50
-10 FOR L = 0 TO N-2 STEP 2 * C
-11 LET M = L + C - 1
-12 IF M < N - 1 THEN 15
-13 LET M = N - 1
-14 
-15 LET R = L + 2 * C - 1
-16 IF R < N - 1 THEN 19
-17 LET R = N - 1
-18 
+1  INPUT N
+2  DIM V(N)
+3  FOR I = 0 TO N-1
+4  INPUT V(I)
+5  NEXT I
+6 
+7  LET C = 1
+8  IF C >= N THEN 52
+9 FOR L = 0 TO N-2 STEP 2 * C
+10 LET M = L + C - 1
+11 IF M < N - 1 THEN 14
+12 LET M = N - 1
+13 
+14 LET R = L + 2 * C - 1
+15 IF R < N - 1 THEN 19
+16 LET R = N - 1
+17 IF R = M THEN 20
+18
 19 GOSUB 24
 20 NEXT L
 21 LET C = 2 * C
-22 GOTO 9
+22 GOTO 8
 23 
 24 LET N1 = M - L + 1
 25 LET N2 = R - M
@@ -36,19 +36,20 @@
 36 LET J = 0
 37 LET K = L
 38 
-39 IF I >= N1 AND J >= N2 THEN 49
-40 IF I < N1 AND (J >= N2 OR A(I) <= B(J)) THEN 45
-41 LET V(K) = A(I)
-42 LET I = I + 1
-43 LET K = K + 1
-44 GOTO 39
-45 LET V(K) = B(J)
-46 LET J = J + 1
-47 LET K = K + 1
-48 GOTO 39
-49 RETURN
-50 FOR I = 0 TO N - 1
-51 PRINT V(I) , " "
-52 PRINT "\n"
-53 NEXT I
-54 END
+39 IF I >= N1 AND J >= N2 THEN 51
+40 IF I >= N1 THEN 47
+41 IF J >= N2 THEN 43
+42 IF A(I) > B(J) THEN 47
+43 LET V(K) = A(I)
+44 LET I = I + 1
+45 LET K = K + 1
+46 GOTO 39
+47 LET V(K) = B(J)
+48 LET J = J + 1
+49 LET K = K + 1
+50 GOTO 39
+51 RETURN
+52 FOR I = 0 TO N - 1
+53 PRINT V(I)
+54 NEXT I
+55 END
