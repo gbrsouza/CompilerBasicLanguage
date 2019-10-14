@@ -208,6 +208,13 @@ void visitor::visit(const program& node) const{
 	labels.clear();
 }
 
+void visitor::visit(const empty_stmt& node) const{
+	string label = "l" + to_string(node.line);
+	labels.push_back(label);
+	string code = label + ":\n";
+	buffer = code;
+}
+
 void visitor::visit(const end_stmt& node) const{
 	string label = "l" + to_string(node.line);
 	labels.push_back(label);

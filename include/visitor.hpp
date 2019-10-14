@@ -37,6 +37,7 @@ public:
 	void visit(const position& node) const;
 	void visit(const token& node) const;
 	void visit(const program& node) const;
+	void visit(const empty_stmt& node) const;
 	void visit(const end_stmt& node) const;
 	void visit(const let_stmt& node) const;
 	void visit(const print_stmt& node) const;

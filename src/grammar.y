@@ -119,7 +119,7 @@ stmts           : end                                               {$$ = new pr
 
 stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$->set_line($1);}
                 | ENDL                                              {$$ = nullptr;}
-                | INTEGER ENDL                                      {$$ = nullptr;}
+                | INTEGER ENDL                                      {$$ = new empty_stmt(token(INTEGER, get_pos(@1))); $$->set_line($1);}
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}

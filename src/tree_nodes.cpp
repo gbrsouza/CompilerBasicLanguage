@@ -46,6 +46,12 @@ program::~program(){
 	}
 }
 
+empty_stmt::empty_stmt(token _tok) : stmt(_tok) { }
+
+void empty_stmt::accept(const visitor& v) const{
+	v.visit(*this);
+}
+
 end_stmt::end_stmt(token _tok) : stmt(_tok) { }
 
 void end_stmt::accept(const visitor& v) const{

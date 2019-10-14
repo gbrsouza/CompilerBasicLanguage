@@ -63,6 +63,14 @@ namespace ast{
 		void push_front(stmt* _stmt);
 		void accept(const visitor& v) const;
 	};
+	
+	class empty_stmt : public stmt{
+	private:
+		friend class visitor;
+	public:
+		empty_stmt(token _tok);
+		void accept(const visitor& v) const override;
+	};
 
 	class end_stmt : public stmt{
 	private:
