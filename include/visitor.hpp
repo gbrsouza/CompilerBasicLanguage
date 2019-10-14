@@ -10,6 +10,7 @@ namespace ast{
 class position;
 class token;
 class program;
+class empty_stmt;
 class end_stmt;
 class let_stmt;
 class print_stmt;
