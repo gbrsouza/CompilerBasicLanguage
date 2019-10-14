@@ -3,6 +3,7 @@
 #include <math.h>
 #include <queue>
 #include <random>
+#include <sstream>
 #include <stack>
 #include <string>
 
@@ -559,7 +560,7 @@ void print(value val, bool separator){ // separator = true if comma and false if
 	static bool is_last_numeric_or_boolean = false;
 	static int print_pointer = 0;
 	bool is_current_numeric_or_boolean;
-	stringstream buffer;
+	std::stringstream buffer;
 	
 	if(val.value_type == value::String){
 		is_current_numeric_or_boolean = false;
@@ -625,7 +626,7 @@ void read(const char* name, int id1, int id2){
 
 void input(const char* name, int id1, int id2){
 	string input_word;
-	cin >> input_word;
+	std::cin >> input_word;
 	int dot_count = 0;
 	bool is_numeric = true;
 	for(char c : input_word){
