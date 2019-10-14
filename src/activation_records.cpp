@@ -624,7 +624,30 @@ void read(const char* name, int id1, int id2){
 }
 
 void input(const char* name, int id1, int id2){
-	
+	string input_word;
+	cin >> input_word;
+	int dot_count = 0;
+	bool is_numeric = true;
+	for(char c : input_word){
+		if(c == '.'){
+			dot_count++;
+		}
+		is_numeric &= (isdigit(c) != 0);
+	}
+	value val;
+	if(is_numeric && dot_count == 1 && input_word[0] != '.' && input_word.back() != '.'){
+		val.value_type = value::Float;
+		val.content._double = std::stod(input_word);
+	}
+	else if(is_numeric && dot_count == 0){
+		val.value_type = value::Int;
+		val.content._int = std::stoi(input_word);
+	}
+	else{
+		val.value_type = value::String;
+		val.content._string = new string(input_word);
+	}
+	let(name, id1, id2, val);
 }
 
 void data(value val){
