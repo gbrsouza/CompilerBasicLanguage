@@ -1,4 +1,8 @@
 1 DEF FNA(X) = X + 1
-2 LET X(10 / 2) = SIN(5) - FNA(FNA(10))
-3 END
+2 DEF FNB(Y) = Y / 2 - X(0)
+3 DIM X(3)
+4 LET X(0) = ABS(-1)
+5 LET X(2) = FNB(50) - FNA(FNA(10))
+6 PRINT X(0), X(1), X(2)
+7 END
 

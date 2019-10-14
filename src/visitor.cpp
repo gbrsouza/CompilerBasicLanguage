@@ -554,8 +554,12 @@ void solve_expr(const visitor* vis, const expr& exp, string label, string target
 		code += new_label + ":\n";		
 		code += "value t" + to_string(t.first) + ";\n";
 		code += "t" + to_string(t.first) + " = " + "get_return_value();\n";
+		vector<string> reverse_lines;
 		for(auto it2 = calls.cbegin(); it2 != it; it2++){
-			code += "t" + to_string(it2->first) + " = pop_value();\n";
+			reverse_lines.push_back(string("t") + to_string(it2->first) + " = pop_value();\n");
+		}
+		for(auto it_line = reverse_lines.crbegin(); it_line != reverse_lines.crend(); it_line++){
+			code += *it_line;
 		}
 	}
 	calls.clear();

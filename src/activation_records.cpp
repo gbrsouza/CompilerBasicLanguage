@@ -613,6 +613,8 @@ void print(value val, bool separator){ // separator = true if comma and false if
 			print_pointer++;
 		}
 	}
+	
+	std::fflush(stdout);
 }
 
 void read(const char* name, int id1, int id2){

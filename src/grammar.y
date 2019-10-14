@@ -146,7 +146,7 @@ num_list        : INTEGER                                           {$$ = new ve
                 ;
 
 expr_list       : expr                                              {$$ = new vector<print_expr>({{$1, false}});}
-                | expr_list COMMA expr                              {$$ = $1; $$->push_back({$3, true});}
+                | expr_list COMMA expr                              {$$ = $1; $$->back().second = true; $$->push_back({$3, false});}
                 | expr_list SEMICOLON expr                          {$$ = $1; $$->push_back({$3, false});}
                 ;
 
