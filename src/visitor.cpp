@@ -254,6 +254,7 @@ void visitor::visit(const print_stmt& node) const{
 		code += "print(target, " + to_string(cur_expr.second) + ");\n";
 		code += "}\n";
 	}
+	code += "print(to_value('\\n'), false);\n";
 	buffer = code;
 }
 

@@ -550,27 +550,68 @@ void dim(const char* name, int id1, int id2){
 	}
 }
 
-void print(value val, bool separator){ // TODO use separator to format correctly
+void print(value val, bool separator){ // separator = true if comma and false if semicolon or empty
 	if(val.value_type == value::Array1d || val.value_type == value::Array2d){
 		cerr << "Error: Print command of " << value_type_to_string(val) << " is not defined" << endl;
 		exit(-1);
 	}
+	
+	static bool is_last_numeric_or_boolean = false;
+	static int print_pointer = 0;
+	bool is_current_numeric_or_boolean;
+	stringstream buffer;
+	
 	if(val.value_type == value::String){
-		cout << *val.content._string;
+		is_current_numeric_or_boolean = false;
+		buffer << *val.content._string;
 	}
 	else if(val.value_type == value::Char){
-		cout << val.content._char;
+		is_current_numeric_or_boolean = false;
+		buffer << val.content._char;
 	}
 	else if(val.value_type == value::Int){
-		cout << val.content._int;
+		is_current_numeric_or_boolean = true;
+		buffer << val.content._int;
 	}
 	else if(val.value_type == value::Float){
-		cout << val.content._double;
+		is_current_numeric_or_boolean = true;
+		buffer << val.content._double;
 	}
-	else if(val.value_type == value::Bool){
-		cout << (val.content._bool ? "True" : "False");
+	else{ // val.value_type == value::Bool
+		is_current_numeric_or_boolean = true;
+		buffer << (val.content._bool ? "True" : "False");
 	}
-	cout << endl;
+	
+	string printed_string = "";
+	if(is_last_numeric_or_boolean && is_current_numeric_or_boolean && print_pointer < 75){
+		printed_string = " ";
+	}
+	
+	printed_string += buffer.str();
+	
+	for(char c : printed_string){
+		if(c == '\n'){
+			cout << endl;
+			print_pointer = 0;
+		}
+		else{
+			if(print_pointer == 75){
+				cout << endl;
+				print_pointer = 0;
+			}
+			cout << c;
+			print_pointer++;
+		}
+	}
+	
+	is_last_numeric_or_boolean = is_current_numeric_or_boolean && (!separator || print_pointer % 15 == 0);
+	
+	if(separator){
+		while(print_pointer % 15 != 0){
+			cout << ' ';
+			print_pointer++;
+		}
+	}
 }
 
 void read(const char* name, int id1, int id2){
@@ -582,7 +623,9 @@ void read(const char* name, int id1, int id2){
 	data_buffer.pop();
 }
 
-void input(const char* , int , int ){ } // TODO
+void input(const char* name, int id1, int id2){
+	
+}
 
 void data(value val){
 	data_buffer.push(val);
