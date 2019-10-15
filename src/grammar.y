@@ -33,6 +33,7 @@ position get_pos(YYLTYPE yypos){
 %type <_name> native_function
 %type <_print_list> expr_list
 %type <_num_list> num_list
+%type <_expr> number
 %type <_var_list> variable_list
 
 %token
@@ -139,10 +140,16 @@ stmt            : LET variable EQUALS expr                          {$$ = new le
                 | STOP                                              {$$ = new stop_stmt(token(STOP, get_pos(@1)));}
                 ;
 
-num_list        : INTEGER                                           {$$ = new vector<expr*>({new literal_expr<int>(token(INTEGER, get_pos(@1)), $1)});}
-                | FLOAT                                             {$$ = new vector<expr*>({new literal_expr<string*>(token(FLOAT, get_pos(@1)), $1)});}
-                | num_list COMMA INTEGER                            {$$ = $1; $$->push_back(new literal_expr<int>(token(INTEGER, get_pos(@3)), $3));}
-                | num_list COMMA FLOAT                              {$$ = $1; $$->push_back(new literal_expr<string*>(token(FLOAT, get_pos(@3)), $3));}
+num_list        : number                                            {$$ = new vector<expr*>({$1});}
+                | num_list COMMA number                             {$$ = $1; $$->push_back($3);}
+                ;
+
+number          : INTEGER                                           {$$ = new literal_expr<int>(token(INTEGER, get_pos(@1)), $1);}
+                | FLOAT                                             {$$ = new literal_expr<string*>(token(FLOAT, get_pos(@1)), $1);}
+                | PLUS INTEGER                                      {$$ = new unary_expr(token(PLUS, get_pos(@1)), new literal_expr<int>(token(INTEGER, get_pos(@2)), $2));}
+                | PLUS FLOAT                                        {$$ = new unary_expr(token(PLUS, get_pos(@1)), new literal_expr<string*>(token(FLOAT, get_pos(@2)), $2));}
+                | MINUS INTEGER                                     {$$ = new unary_expr(token(MINUS, get_pos(@1)), new literal_expr<int>(token(INTEGER, get_pos(@2)), $2));}
+                | MINUS FLOAT                                       {$$ = new unary_expr(token(MINUS, get_pos(@1)), new literal_expr<string*>(token(FLOAT, get_pos(@2)), $2));}
                 ;
 
 expr_list       : expr                                              {$$ = new vector<print_expr>({{$1, false}});}

@@ -551,7 +551,7 @@ void solve_expr(const visitor* vis, const expr& exp, string label, string target
 		code += "push_function_call(" + new_label + ");\n";
 		code += "push_parameter(" + t.second.first + ");\n";
 		code += "goto transfer;\n";
-		code += new_label + ":\n";		
+		code += new_label + ":\n";
 		code += "value t" + to_string(t.first) + ";\n";
 		code += "t" + to_string(t.first) + " = " + "get_return_value();\n";
 		vector<string> reverse_lines;
