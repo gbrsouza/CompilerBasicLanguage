@@ -92,6 +92,7 @@ value to_value(char val);
 value to_value(bool val);
 value to_value(const char* val);
 
+value operator+(value target);
 value operator-(value target);
 value operator!(value target);
 value operator+(value left, value right);
@@ -727,6 +728,14 @@ double to_double(const value& val){ // receives numeric value and returns double
 		return (double) val.content._int;
 	}
 	return val.content._double;
+}
+
+value operator+(value target){
+	if(!verify_numeric(target)){
+		cerr << "Error: Undefined unary operator + of " << value_type_to_string(target) << endl;
+		exit(-1);
+	}
+	return target;
 }
 
 value operator-(value target){
