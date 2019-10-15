@@ -43,4 +43,4 @@ clean: bin
 	$(DEL) ./$(EXEC)
 	$(DEL) $(BINDIR)*.o
 	$(DEL) $(SRCDIR)token.cpp
-
+	$(DEL) $(SRCDIR)parser.cpp
