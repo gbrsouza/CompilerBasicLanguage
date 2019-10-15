@@ -33,6 +33,7 @@ position get_pos(YYLTYPE yypos){
 %type <_name> native_function
 %type <_print_list> expr_list
 %type <_num_list> num_list
+%type <_expr> number
 %type <_var_list> variable_list
 
 %token
@@ -119,33 +120,40 @@ stmts           : end                                               {$$ = new pr
 
 stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$->set_line($1);}
                 | ENDL                                              {$$ = nullptr;}
-                | INTEGER ENDL                                      {$$ = nullptr;}
+                | INTEGER ENDL                                      {$$ = new empty_stmt(token(INTEGER, get_pos(@1))); $$->set_line($1);}
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}
                 | PRINT expr_list                                   {$$ = new print_stmt(token(PRINT, get_pos(@1)), $2);}
                 | READ  variable_list                               {$$ = new read_stmt(token(READ, get_pos(@1)), $2);}
                 | DATA  num_list                                    {$$ = new data_stmt(token(DATA, get_pos(@1)), $2);}
+                | INPUT variable_list                               {$$ = new input_stmt(token(INPUT, get_pos(@1)), $2);}
                 | GOTO INTEGER                                      {$$ = new goto_stmt(token(GOTO, get_pos(@1)), $2);}
                 | IF expr THEN INTEGER                              {$$ = new if_stmt(token(IF, get_pos(@1)), $2, $4);}
                 | GOSUB INTEGER                                     {$$ = new gosub_stmt(token(GOSUB, get_pos(@1)), $2);}
                 | RETURN                                            {$$ = new return_stmt(token(RETURN, get_pos(@1)));}
                 | DEF FUNCTION LPAREN VARIABLE RPAREN EQUALS expr   {$$ = new def_stmt(token(DEF, get_pos(@1)), $2, $4, $7);}
                 | DIM variable                                      {$$ = new dim_stmt(token(DIM, get_pos(@1)), $2);}
-                | NEXT variable                                     {$$ = new next_stmt(token(NEXT, get_pos(@1)), $2);}
-                | FOR variable EQUALS expr TO expr STEP expr        {$$ = new for_stmt(token(FOR, get_pos(@1)), $2, $4, $6, $8);}
-                | FOR variable EQUALS expr TO expr                  {$$ = new for_stmt(token(FOR, get_pos(@1)), $2, $4, $6);}
+                | NEXT VARIABLE                                     {$$ = new next_stmt(token(NEXT, get_pos(@1)), new variable(token(VARIABLE, get_pos(@2)), $2));}
+                | FOR VARIABLE EQUALS expr TO expr STEP expr        {$$ = new for_stmt(token(FOR, get_pos(@1)), new variable(token(VARIABLE, get_pos(@2)), $2), $4, $6, $8);}
+                | FOR VARIABLE EQUALS expr TO expr                  {$$ = new for_stmt(token(FOR, get_pos(@1)), new variable(token(VARIABLE, get_pos(@2)), $2), $4, $6);}
                 | STOP                                              {$$ = new stop_stmt(token(STOP, get_pos(@1)));}
                 ;
 
-num_list        : INTEGER                                           {$$ = new vector<expr*>({new literal_expr<int>(token(INTEGER, get_pos(@1)), $1)});}
-                | FLOAT                                             {$$ = new vector<expr*>({new literal_expr<string*>(token(FLOAT, get_pos(@1)), $1)});}
-                | num_list COMMA INTEGER                            {$$ = $1; $$->push_back(new literal_expr<int>(token(INTEGER, get_pos(@3)), $3));}
-                | num_list COMMA FLOAT                              {$$ = $1; $$->push_back(new literal_expr<string*>(token(FLOAT, get_pos(@3)), $3));}
+num_list        : number                                            {$$ = new vector<expr*>({$1});}
+                | num_list COMMA number                             {$$ = $1; $$->push_back($3);}
+                ;
+
+number          : INTEGER                                           {$$ = new literal_expr<int>(token(INTEGER, get_pos(@1)), $1);}
+                | FLOAT                                             {$$ = new literal_expr<string*>(token(FLOAT, get_pos(@1)), $1);}
+                | PLUS INTEGER                                      {$$ = new unary_expr(token(PLUS, get_pos(@1)), new literal_expr<int>(token(INTEGER, get_pos(@2)), $2));}
+                | PLUS FLOAT                                        {$$ = new unary_expr(token(PLUS, get_pos(@1)), new literal_expr<string*>(token(FLOAT, get_pos(@2)), $2));}
+                | MINUS INTEGER                                     {$$ = new unary_expr(token(MINUS, get_pos(@1)), new literal_expr<int>(token(INTEGER, get_pos(@2)), $2));}
+                | MINUS FLOAT                                       {$$ = new unary_expr(token(MINUS, get_pos(@1)), new literal_expr<string*>(token(FLOAT, get_pos(@2)), $2));}
                 ;
 
 expr_list       : expr                                              {$$ = new vector<print_expr>({{$1, false}});}
-                | expr_list COMMA expr                              {$$ = $1; $$->push_back({$3, true});}
+                | expr_list COMMA expr                              {$$ = $1; $$->back().second = true; $$->push_back({$3, false});}
                 | expr_list SEMICOLON expr                          {$$ = $1; $$->push_back({$3, false});}
                 ;
 

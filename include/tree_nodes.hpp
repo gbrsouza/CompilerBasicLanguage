@@ -63,6 +63,14 @@ namespace ast{
 		void push_front(stmt* _stmt);
 		void accept(const visitor& v) const;
 	};
+	
+	class empty_stmt : public stmt{
+	private:
+		friend class visitor;
+	public:
+		empty_stmt(token _tok);
+		void accept(const visitor& v) const override;
+	};
 
 	class end_stmt : public stmt{
 	private:
@@ -100,6 +108,16 @@ namespace ast{
 	public:
 		read_stmt(token _tok, vector<variable*>* _var_list);
 		~read_stmt();
+		void accept(const visitor& v) const override;
+	};
+	
+	class input_stmt : public stmt{
+	private:
+		vector<variable*>* var_list;
+		friend class visitor;
+	public:
+		input_stmt(token _tok, vector<variable*>* _var_list);
+		~input_stmt();
 		void accept(const visitor& v) const override;
 	};
 	

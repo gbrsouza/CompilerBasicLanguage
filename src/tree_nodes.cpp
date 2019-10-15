@@ -12,13 +12,13 @@ int position::get_column() const {
 	return column;
 }
 
-void position::accept(const visitor&v) const{
+void position::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
 token::token(int _id, position _pos) : id((yytokentype)_id), pos(_pos) { }
 
-void token::accept(const visitor&v) const{
+void token::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -32,7 +32,7 @@ void stmt::set_line(int _line){
 
 program::program() : stmts{} { }
 
-void program::accept(const visitor&v) const{
+void program::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -46,9 +46,15 @@ program::~program(){
 	}
 }
 
+empty_stmt::empty_stmt(token _tok) : stmt(_tok) { }
+
+void empty_stmt::accept(const visitor& v) const{
+	v.visit(*this);
+}
+
 end_stmt::end_stmt(token _tok) : stmt(_tok) { }
 
-void end_stmt::accept(const visitor&v) const{
+void end_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -59,7 +65,7 @@ let_stmt::~let_stmt(){
 	delete val;
 }
 
-void let_stmt::accept(const visitor&v) const{
+void let_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -72,7 +78,7 @@ print_stmt::~print_stmt(){
 	delete values;
 }
 
-void print_stmt::accept(const visitor&v) const{
+void print_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -85,7 +91,20 @@ read_stmt::~read_stmt(){
 	delete var_list;
 }
 
-void read_stmt::accept(const visitor&v) const{
+void read_stmt::accept(const visitor& v) const{
+	v.visit(*this);
+}
+
+input_stmt::input_stmt(token _tok, vector<variable*>* _var_list) : stmt(_tok), var_list(_var_list) { }
+
+input_stmt::~input_stmt(){
+	for(variable* var : *var_list){
+		delete var;
+	}
+	delete var_list;
+}
+
+void input_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -98,13 +117,13 @@ data_stmt::~data_stmt(){
 	delete num_list;
 }
 
-void data_stmt::accept(const visitor&v) const{
+void data_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
 goto_stmt::goto_stmt(token _tok, int _target_line) : stmt(_tok), target_line(_target_line) { }
 
-void goto_stmt::accept(const visitor&v) const{
+void goto_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -114,19 +133,19 @@ if_stmt::~if_stmt(){
 	delete condition;
 }
 
-void if_stmt::accept(const visitor&v) const{
+void if_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
 gosub_stmt::gosub_stmt(token _tok, int _target_line) : stmt(_tok), target_line(_target_line) { }
 
-void gosub_stmt::accept(const visitor&v) const{
+void gosub_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
 return_stmt::return_stmt(token _tok) : stmt(_tok) { }
 
-void return_stmt::accept(const visitor&v) const{
+void return_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -138,7 +157,7 @@ def_stmt::~def_stmt(){
 	delete target;
 }
 
-void def_stmt::accept(const visitor&v) const{
+void def_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -148,7 +167,7 @@ dim_stmt::~dim_stmt(){
 	delete var;
 }
 
-void dim_stmt::accept(const visitor&v) const{
+void dim_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -158,7 +177,7 @@ next_stmt::~next_stmt(){
 	delete var;
 }
 
-void next_stmt::accept(const visitor&v) const{
+void next_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -173,13 +192,13 @@ for_stmt::~for_stmt(){
 	}
 }
 
-void for_stmt::accept(const visitor&v) const{
+void for_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
 stop_stmt::stop_stmt(token _tok) : stmt(_tok) { }
 
-void stop_stmt::accept(const visitor&v) const{
+void stop_stmt::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -194,7 +213,7 @@ binary_expr::~binary_expr(){
 	delete right;
 }
 
-void binary_expr::accept(const visitor&v) const{
+void binary_expr::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -204,7 +223,7 @@ unary_expr::~unary_expr(){
 	delete target;
 }
 
-void unary_expr::accept(const visitor&v) const{
+void unary_expr::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -215,7 +234,7 @@ function_expr::~function_expr(){
 	delete param;
 }
 
-void function_expr::accept(const visitor&v) const{
+void function_expr::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -231,7 +250,7 @@ variable::~variable(){
 	}
 }
 
-void variable::accept(const visitor&v) const{
+void variable::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
@@ -242,7 +261,7 @@ template<class T>
 literal_expr<T>::~literal_expr(){ }
 
 template<class T>
-void literal_expr<T>::accept(const visitor&v) const{
+void literal_expr<T>::accept(const visitor& v) const{
 	v.visit(*this);
 }
 
