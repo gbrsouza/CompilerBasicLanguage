@@ -460,7 +460,7 @@ void check_dim(const value& val, int id1, int id2){
 		cerr << "Error: tried to use " << value_type_to_string(val) << " as two dimensional array" << endl;
 		exit(-1);
 	}
-	if(id1 != -1 && val.value_type != value::Array1d){
+	if(id1 != -1 && id2 == -1 && val.value_type != value::Array1d){
 		cerr << "Error: tried to use " << value_type_to_string(val) << " as one dimensional array" << endl;
 		exit(-1);
 	}
@@ -475,7 +475,7 @@ value& access_reference(value& val, int id1, int id2){
 		}
 		return val.content._matrix.content[id1][id2];
 	}
-	if(id1 != -1){
+	else if(id1 != -1){
 		if(id1 < 0 || id1 >= val.content._array.size){
 			cerr << "Error: tried to access position (" << id1 << ") of array with dimension ("
 				<< val.content._array.size << ")" << endl;
