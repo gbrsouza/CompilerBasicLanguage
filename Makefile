@@ -40,7 +40,7 @@ visitor.o: $(SRCDIR)visitor.cpp
 
 ### clear objects & executable
 clean: bin
-	$(DEL) ./$(EXEC)
-	$(DEL) $(BINDIR)*.o
-	$(DEL) $(SRCDIR)token.cpp
-	$(DEL) $(SRCDIR)parser.cpp
+	$(DEL) -f ./$(EXEC)
+	$(DEL) -f $(BINDIR)*.o
+	$(DEL) -f $(SRCDIR)token.cpp
+	$(DEL) -f $(SRCDIR)parser.cpp
