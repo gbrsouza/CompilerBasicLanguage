@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <assert.h>
 #include <iostream>
 #include <fstream>
 #include <map>
+#include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -92,11 +94,15 @@ inline string to_string(string* value){
 }
 
 vector<string> labels;
-map<int, pair<string, string>> calls; // (idx, (parameter_expr, function_name))
+vector<pair<int, int> > target_labels; // (target_line, statement_line)
+vector<pair<int, pair<string, string>>> calls; // (idx, (parameter_expr, function_name))
 map<string, pair<string, expr*> > function_code; // (label, (parameter_name, code))
 string buffer;
 string current_parameter;
 
+void clear_data();
+void verify_repeated_lines();
+void verify_undefined_lines();
 void get_var_idxs(const visitor* vis, string label, const expr* idx1, const expr* idx2);
 void solve_expr(const visitor* vis, const expr& exp, string label, string target);
 string verify_index(string idx);
@@ -107,6 +113,8 @@ void visitor::visit(const position& ) const{ }
 void visitor::visit(const token& ) const{ }
 
 void visitor::visit(const program& node) const{
+	clear_data();
+	
 	string code, main;
 	
 	auto add_to_main = [&](const string s){
@@ -142,8 +150,27 @@ void visitor::visit(const program& node) const{
 		(*_stmt)->accept(*this);
 		add_to_main(buffer);
 	}
+		
+	for(auto& func : function_code){
+		const string& func_label = func.first;
+		string& param_name = func.second.first;
+		expr& e = *func.second.second;
+		add_to_main(func_label + ": {\n");
+		add_to_main("parameter = pop_parameter();\n");
+		current_parameter = param_name;
+		solve_expr(this, e, func_label + "_impl", "result");
+		current_parameter = "";
+		add_to_main(buffer);
+		add_to_main("next_label = pop_function_call();\n");
+		add_to_main("set_return_value(result);\n");
+		add_to_main("goto transfer;\n");
+		add_to_main("}\n");
+	}
 	
 	labels.push_back("invalid");
+	
+	verify_repeated_lines();
+	verify_undefined_lines();
 	
 	std::ifstream in("src/activation_records.cpp");
 	
@@ -166,22 +193,6 @@ void visitor::visit(const program& node) const{
 		std::getline(cin, line);
 		code += line + "\n";
 	} while(line.find("int main") == string::npos);
-	
-	for(auto& func : function_code){
-		const string& func_label = func.first;
-		string& param_name = func.second.first;
-		expr& e = *func.second.second;
-		add_to_main(func_label + ": {\n");
-		add_to_main("parameter = pop_parameter();\n");
-		current_parameter = param_name;
-		solve_expr(this, e, func_label + "_impl", "result");
-		current_parameter = "";
-		add_to_main(buffer);
-		add_to_main("next_label = pop_function_call();\n");
-		add_to_main("set_return_value(result);\n");
-		add_to_main("goto transfer;\n");
-		add_to_main("}\n");
-	}
 	
 	add_to_main("transfer:\n");
 	add_to_main("switch(next_label){\n");
@@ -305,6 +316,7 @@ void visitor::visit(const goto_stmt& node) const{
 	string code = label + ":\n";
 	string target_label = "l" + to_string(node.target_line);
 	code += "goto " + target_label + ";\n";
+	target_labels.emplace_back(node.target_line, node.line);
 	buffer = code;
 }
 
@@ -316,6 +328,7 @@ void visitor::visit(const if_stmt& node) const{
 	solve_expr(this, *node.condition, label + "_condition", "condition");
 	code += buffer;
 	code += "if(condition.content._bool) goto " + target_label + ";\n";
+	target_labels.emplace_back(node.target_line, node.line);
 	code += "}\n";
 	buffer = code;
 }
@@ -329,6 +342,7 @@ void visitor::visit(const gosub_stmt& node) const{
 	string target_label = "l" + to_string(node.target_line);
 	code += "push_function_call(" + return_label + ");\n";
 	code += "goto " + target_label + ";\n";
+	target_labels.emplace_back(node.target_line, node.line);
 	code += return_label + ":\n";
 	buffer = code;
 }
@@ -468,7 +482,7 @@ void visitor::visit(const function_expr& node) const{
 	node.param->accept(*this);
 	if(node.name->operator[](0) == 'F' || node.name->operator[](0) == 'f'){
 		int id = (int) calls.size();
-		calls[id] = std::make_pair(buffer, *node.name);
+		calls.emplace_back(id, std::make_pair(buffer, *node.name));
 		code = string("t") + to_string(id);
 	}
 	else{
@@ -512,6 +526,44 @@ template<class T> void visitor::visit(const literal_expr<T>& node) const{
 template void visitor::visit<string*>(const literal_expr<string*>& node) const;
 template void visitor::visit<int>(const literal_expr<int>& node) const;
 template void visitor::visit<bool>(const literal_expr<bool>& node) const;
+
+void clear_data(){
+	labels.clear();
+	target_labels.clear();
+	calls.clear();
+	function_code.clear();
+	buffer.clear();
+	current_parameter.clear();
+}
+
+void verify_repeated_lines(){
+	vector<string> user_labels;
+	for(string& label : labels){
+		if(!label.empty() && label[0] == 'l' && label.find('_') == string::npos){
+			user_labels.push_back(label.substr(1));
+		}
+	}
+	std::sort(user_labels.begin(), user_labels.end());
+	for(int i = 0; i < (int) user_labels.size() - 1; i++){
+		if(user_labels[i] == user_labels[i + 1]){
+			std::cerr << "Warning: line " << user_labels[i] << " is defined multiple times" << std::endl;
+			while(i < (int) user_labels.size() - 1 && user_labels[i] == user_labels[i + 1]){
+				i++;
+			}
+		}
+	}
+}
+
+void verify_undefined_lines(){
+	std::set<string> all_labels(labels.begin(), labels.end());
+	for(auto& it : target_labels){
+		int target_line = it.first;
+		int stmt_line = it.second;
+		if(all_labels.find(string("l") + to_string(target_line)) == all_labels.end()){
+			std::cerr << "Warning (at line " << stmt_line << "): line " << target_line << " is not defined" << std::endl; 
+		}
+	}
+}
 
 void get_var_idxs(const visitor* vis, string label, const expr* idx1, const expr* idx2){
 	string code;
@@ -578,3 +630,4 @@ string create_default_index(string idx){
 	code += idx + " = to_value(-1);\n";
 	return code;
 }
+
