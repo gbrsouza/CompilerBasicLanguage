@@ -22,4 +22,4 @@ Now, is necessary compile the output file with the g++, for this, run the follow
 
 Finally, run the executable code:
 
-`./exe`
+`./exe.out`
