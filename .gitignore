@@ -57,4 +57,4 @@ Module.symvers
 modules.order
 src/token.cpp
 src/parser.cpp
-
+*~
