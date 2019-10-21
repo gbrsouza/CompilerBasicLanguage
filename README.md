@@ -18,7 +18,7 @@ Then, the compiler is able to run. It uses the standard input and output, theref
 
 Now, is necessary compile the output file with the g++, for this, run the following command:
 
-`$ g++ -Wall --std=c++11 output.cpp -o exe.out` 
+`$ g++ -Wall --std=c++11 -fpermissive output.cpp -o exe.out` 
 
 Finally, run the executable code:
 
