@@ -15,12 +15,19 @@ using namespace ast;
 
 program* root = nullptr;
 
-void yyerror(const char *){ }
-
 position get_pos(YYLTYPE yypos){
     return position{yypos.first_line, yypos.first_column};
 }
 
+%}
+
+%define parse.error verbose
+%define parse.lac full
+// %define api.pure full
+%locations
+
+%{
+void yyerror(const char *){}
 %}
 
 %type <_program> program
@@ -121,6 +128,7 @@ stmts           : end                                               {$$ = new pr
 stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$->set_line($1);}
                 | ENDL                                              {$$ = nullptr;}
                 | INTEGER ENDL                                      {$$ = new empty_stmt(token(INTEGER, get_pos(@1))); $$->set_line($1);}
+                | error ENDL                                        {}
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}
