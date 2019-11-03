@@ -96,7 +96,7 @@ inline string to_string(string* value){
 vector<string> labels;
 vector<pair<int, int> > target_labels; // (target_line, statement_line)
 vector<pair<int, pair<string, string>>> calls; // (idx, (parameter_expr, function_name))
-map<string, pair<string, expr*> > function_code; // (label, (parameter_name, code))
+map<string, pair<string, const expr*> > function_code; // (label, (parameter_name, code))
 string buffer;
 string current_parameter;
 
@@ -154,7 +154,7 @@ void visitor::visit(const program& node) const{
 	for(auto& func : function_code){
 		const string& func_label = func.first;
 		string& param_name = func.second.first;
-		expr& e = *func.second.second;
+		const expr& e = *func.second.second;
 		add_to_main(func_label + ": {\n");
 		add_to_main("parameter = pop_parameter();\n");
 		current_parameter = param_name;
@@ -258,7 +258,7 @@ void visitor::visit(const print_stmt& node) const{
 	labels.push_back(label);
 	string code = label + ":\n";
 	int val_count = 0;
-	for(print_expr& cur_expr : *node.values){
+	for(const print_expr& cur_expr : *node.values){
 		code += "{\n";
 		solve_expr(this, *cur_expr.first, label + "_" + to_string(val_count++), "target");
 		code += buffer;

@@ -1,4 +1,5 @@
 %{
+#include <iostream>
 #include <string>
 #include <vector>
 #include <utility>
@@ -8,15 +9,22 @@
 #include "token.hpp"
 #include "tree_nodes.hpp"
 
+using std::cerr;
+using std::endl;
 using std::string;
 using std::vector;
 
 using namespace ast;
 
 program* root = nullptr;
+int error_count = 0;
 
 position get_pos(YYLTYPE yypos){
     return position{yypos.first_line, yypos.first_column};
+}
+
+void print_error_location(position pos){
+    cerr << "Position in file: line " << pos.get_line() << ", column " << pos.get_column() << endl << endl;
 }
 
 %}
@@ -27,7 +35,17 @@ position get_pos(YYLTYPE yypos){
 %locations
 
 %{
-void yyerror(const char *){}
+void yyerror(const char * s){
+    if(string(s).find("expecting LEXEOF") != string::npos){
+        return;
+    }
+    cerr << s;
+    if(string(s).find("unexpected LEXERROR") != string::npos){
+        cerr << ". Note: LEXERROR token is used whenever a lexical error occurs";
+    }
+    cerr << endl;
+    error_count++;
+}
 %}
 
 %type <_program> program
@@ -74,7 +92,7 @@ INPUT 27
 INT 28
 <_int> INTEGER 29
 LET 30
-LEXEOF 31
+LEXEOF 0
 LEXERROR 32
 LOG 33
 LPAREN 34
@@ -118,7 +136,11 @@ WHITE 59
 program         : stmts                                             {root = $$ = $1;}
                 ;
 
-end             : INTEGER END                                       {$$ = new end_stmt(token(END, get_pos(@2))); $$->set_line($1);}
+end             : INTEGER END extra                                 {$$ = new end_stmt(token(END, get_pos(@2))); $$->set_line($1);}
+                ;
+
+extra           : LEXEOF                                            {}
+                | error LEXEOF                                      {yyerrok;}
                 ;
 
 stmts           : end                                               {$$ = new program{}; $$->push_front($1);}
@@ -128,7 +150,8 @@ stmts           : end                                               {$$ = new pr
 stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$->set_line($1);}
                 | ENDL                                              {$$ = nullptr;}
                 | INTEGER ENDL                                      {$$ = new empty_stmt(token(INTEGER, get_pos(@1))); $$->set_line($1);}
-                | error ENDL                                        {}
+                | INTEGER error ENDL                                {$$ = nullptr; yyerrok; cerr << "error message: unknown statement of line defined as " << $1 << ". "; print_error_location(get_pos(@2));}
+                | error ENDL                                        {$$ = nullptr; yyerrok; cerr << "error message: statement of undefined line. "; print_error_location(get_pos(@1));}
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}
