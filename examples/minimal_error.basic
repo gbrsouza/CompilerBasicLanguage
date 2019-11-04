@@ -3,4 +3,5 @@
 10 @
 STOP
 20
-30 END
+30 LET X = 1 2
+50 END

@@ -27,6 +27,10 @@ void print_error_location(position pos){
     cerr << "Position in file: line " << pos.get_line() << ", column " << pos.get_column() << endl << endl;
 }
 
+void print_error_in_statement(string token_name, int line_id){
+    cerr << "error message: syntax error at " << token_name << " statement, in line defined as " << line_id << ". ";
+}
+
 %}
 
 %define parse.error verbose
@@ -150,8 +154,31 @@ stmts           : end                                               {$$ = new pr
 stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$->set_line($1);}
                 | ENDL                                              {$$ = nullptr;}
                 | INTEGER ENDL                                      {$$ = new empty_stmt(token(INTEGER, get_pos(@1))); $$->set_line($1);}
-                | INTEGER error ENDL                                {$$ = nullptr; yyerrok; cerr << "error message: unknown statement of line defined as " << $1 << ". "; print_error_location(get_pos(@2));}
-                | error ENDL                                        {$$ = nullptr; yyerrok; cerr << "error message: statement of undefined line. "; print_error_location(get_pos(@1));}
+                | error_level_1                                     {$$ = nullptr;}
+                ;
+
+error_level_1   : error_level_2                                     {}
+                | error ENDL                                        {yyerrok; cerr << "error message: statement of undefined line. "; print_error_location(get_pos(@1));}
+                ;
+
+error_level_2   : error_level_3                                     {}
+                | INTEGER error ENDL                                {yyerrok; cerr << "error message: unknown statement of line defined as " << $1 << ". "; print_error_location(get_pos(@2));}
+                ;
+                
+error_level_3   : INTEGER LET error ENDL                            {yyerrok; print_error_in_statement("LET", $1); print_error_location(get_pos(@2));}
+                | INTEGER PRINT error ENDL                          {yyerrok; print_error_in_statement("PRINT", $1); print_error_location(get_pos(@2));}
+                | INTEGER READ error ENDL                           {yyerrok; print_error_in_statement("READ", $1); print_error_location(get_pos(@2));}
+                | INTEGER DATA error ENDL                           {yyerrok; print_error_in_statement("DATA", $1); print_error_location(get_pos(@2));}
+                | INTEGER INPUT error ENDL                          {yyerrok; print_error_in_statement("INPUT", $1); print_error_location(get_pos(@2));}
+                | INTEGER GOTO error ENDL                           {yyerrok; print_error_in_statement("GOTO", $1); print_error_location(get_pos(@2));}
+                | INTEGER IF error ENDL                             {yyerrok; print_error_in_statement("IF", $1); print_error_location(get_pos(@2));}
+                | INTEGER GOSUB error ENDL                          {yyerrok; print_error_in_statement("GOSUB", $1); print_error_location(get_pos(@2));}
+                | INTEGER RETURN error ENDL                         {yyerrok; print_error_in_statement("RETURN", $1); print_error_location(get_pos(@2));}
+                | INTEGER DEF error ENDL                            {yyerrok; print_error_in_statement("DEF", $1); print_error_location(get_pos(@2));}
+                | INTEGER DIM error ENDL                            {yyerrok; print_error_in_statement("DIM", $1); print_error_location(get_pos(@2));}
+                | INTEGER NEXT error ENDL                           {yyerrok; print_error_in_statement("NEXT", $1); print_error_location(get_pos(@2));}
+                | INTEGER FOR error ENDL                            {yyerrok; print_error_in_statement("FOR", $1); print_error_location(get_pos(@2));}
+                | INTEGER STOP error ENDL                           {yyerrok; print_error_in_statement("STOP", $1); print_error_location(get_pos(@2));}
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}
