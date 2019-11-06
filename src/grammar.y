@@ -47,6 +47,9 @@ void yyerror(const char * s){
     if(string(s).find("unexpected LEXERROR") != string::npos){
         cerr << ". Note: LEXERROR token is used whenever a lexical error occurs";
     }
+    if(string(s).find("unexpected LEXEOF") != string::npos){
+    	cerr << ". Note: Possibly caused by missing the END statement";
+    }
     cerr << endl;
     error_count++;
 }
