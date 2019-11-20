@@ -32,7 +32,7 @@ enum yytokentype
     INT = 28,
     INTEGER = 29,
     LET = 30,
-    LEXEOF = 31,
+    LEXEOF = 0,
     LEXERROR = 32,
     LOG = 33,
     LPAREN = 34,
@@ -93,7 +93,7 @@ enum yytokentype
 #define INT 28
 #define INTEGER 29
 #define LET 30
-#define LEXEOF 31
+#define LEXEOF 0
 #define LEXERROR 32
 #define LOG 33
 #define LPAREN 34

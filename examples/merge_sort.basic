@@ -6,7 +6,7 @@
 6 
 7  LET C = 1
 8  IF C >= N THEN 52
-9 FOR L = 0 TO N-2 STEP 2 * C
+9  FOR L = 0 TO N-2 STEP 2 * C
 10 LET M = L + C - 1
 11 IF M < N - 1 THEN 14
 12 LET M = N - 1

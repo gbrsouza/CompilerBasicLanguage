@@ -1,4 +1,5 @@
 %{
+#include <iostream>
 #include <string>
 #include <vector>
 #include <utility>
@@ -8,19 +9,50 @@
 #include "token.hpp"
 #include "tree_nodes.hpp"
 
+using std::cerr;
+using std::endl;
 using std::string;
 using std::vector;
 
 using namespace ast;
 
 program* root = nullptr;
-
-void yyerror(const char *){ }
+int error_count = 0;
 
 position get_pos(YYLTYPE yypos){
     return position{yypos.first_line, yypos.first_column};
 }
 
+void print_error_location(position pos){
+    cerr << "Position in file: line " << pos.get_line() << ", column " << pos.get_column() << endl << endl;
+}
+
+void print_error_in_statement(string token_name, int line_id){
+    cerr << "error message: syntax error at " << token_name << " statement, in line defined as " << line_id << ". ";
+}
+
+%}
+
+%define parse.error verbose
+%define parse.lac full
+// %define api.pure full
+%locations
+
+%{
+void yyerror(const char * s){
+    if(string(s).find("expecting LEXEOF") != string::npos){
+        return;
+    }
+    cerr << s;
+    if(string(s).find("unexpected LEXERROR") != string::npos){
+        cerr << ". Note: LEXERROR token is used whenever a lexical error occurs";
+    }
+    if(string(s).find("unexpected LEXEOF") != string::npos){
+    	cerr << ". Note: Possibly caused by missing the END statement";
+    }
+    cerr << endl;
+    error_count++;
+}
 %}
 
 %type <_program> program
@@ -67,7 +99,7 @@ INPUT 27
 INT 28
 <_int> INTEGER 29
 LET 30
-LEXEOF 31
+LEXEOF 0
 LEXERROR 32
 LOG 33
 LPAREN 34
@@ -111,7 +143,11 @@ WHITE 59
 program         : stmts                                             {root = $$ = $1;}
                 ;
 
-end             : INTEGER END                                       {$$ = new end_stmt(token(END, get_pos(@2))); $$->set_line($1);}
+end             : INTEGER END extra                                 {$$ = new end_stmt(token(END, get_pos(@2))); $$->set_line($1);}
+                ;
+
+extra           : LEXEOF                                            {}
+                | error LEXEOF                                      {yyerrok;}
                 ;
 
 stmts           : end                                               {$$ = new program{}; $$->push_front($1);}
@@ -121,6 +157,31 @@ stmts           : end                                               {$$ = new pr
 stmt_decl       : INTEGER stmt ENDL                                 {$$ = $2; $$->set_line($1);}
                 | ENDL                                              {$$ = nullptr;}
                 | INTEGER ENDL                                      {$$ = new empty_stmt(token(INTEGER, get_pos(@1))); $$->set_line($1);}
+                | error_level_1                                     {$$ = nullptr;}
+                ;
+
+error_level_1   : error_level_2                                     {}
+                | error ENDL                                        {yyerrok; cerr << "error message: statement of undefined line. "; print_error_location(get_pos(@1));}
+                ;
+
+error_level_2   : error_level_3                                     {}
+                | INTEGER error ENDL                                {yyerrok; cerr << "error message: unknown statement of line defined as " << $1 << ". "; print_error_location(get_pos(@2));}
+                ;
+                
+error_level_3   : INTEGER LET error ENDL                            {yyerrok; print_error_in_statement("LET", $1); print_error_location(get_pos(@2));}
+                | INTEGER PRINT error ENDL                          {yyerrok; print_error_in_statement("PRINT", $1); print_error_location(get_pos(@2));}
+                | INTEGER READ error ENDL                           {yyerrok; print_error_in_statement("READ", $1); print_error_location(get_pos(@2));}
+                | INTEGER DATA error ENDL                           {yyerrok; print_error_in_statement("DATA", $1); print_error_location(get_pos(@2));}
+                | INTEGER INPUT error ENDL                          {yyerrok; print_error_in_statement("INPUT", $1); print_error_location(get_pos(@2));}
+                | INTEGER GOTO error ENDL                           {yyerrok; print_error_in_statement("GOTO", $1); print_error_location(get_pos(@2));}
+                | INTEGER IF error ENDL                             {yyerrok; print_error_in_statement("IF", $1); print_error_location(get_pos(@2));}
+                | INTEGER GOSUB error ENDL                          {yyerrok; print_error_in_statement("GOSUB", $1); print_error_location(get_pos(@2));}
+                | INTEGER RETURN error ENDL                         {yyerrok; print_error_in_statement("RETURN", $1); print_error_location(get_pos(@2));}
+                | INTEGER DEF error ENDL                            {yyerrok; print_error_in_statement("DEF", $1); print_error_location(get_pos(@2));}
+                | INTEGER DIM error ENDL                            {yyerrok; print_error_in_statement("DIM", $1); print_error_location(get_pos(@2));}
+                | INTEGER NEXT error ENDL                           {yyerrok; print_error_in_statement("NEXT", $1); print_error_location(get_pos(@2));}
+                | INTEGER FOR error ENDL                            {yyerrok; print_error_in_statement("FOR", $1); print_error_location(get_pos(@2));}
+                | INTEGER STOP error ENDL                           {yyerrok; print_error_in_statement("STOP", $1); print_error_location(get_pos(@2));}
                 ;
 
 stmt            : LET variable EQUALS expr                          {$$ = new let_stmt(token(LET, get_pos(@1)), $2, $4);}

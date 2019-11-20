@@ -21,8 +21,8 @@ namespace ast{
 	
 	class position{
 	private:
-		int line;
-		int column;
+		const int line;
+		const int column;
 		friend class visitor;
 	public:
 		position(int _line, int _column);
@@ -33,8 +33,8 @@ namespace ast{
 	
 	class token{
 	private:
-		yytokentype id;
-		position pos;
+		const yytokentype id;
+		const position pos;
 		friend class visitor;
 	public:
 		token(int _id, position _pos);
@@ -43,7 +43,7 @@ namespace ast{
 
 	class stmt{
 	protected:
-		token tok;
+		const token tok;
 		int line;
 		stmt(token _tok);
 		friend class visitor;
@@ -82,8 +82,8 @@ namespace ast{
 		
 	class let_stmt : public stmt{
 	private:
-		variable* var;
-		expr* val;
+		const variable* var;
+		const expr* val;
 		friend class visitor;
 	public:
 		let_stmt(token _tok, variable* _var, expr* _val);
@@ -93,7 +93,7 @@ namespace ast{
 	
 	class print_stmt : public stmt{
 	private:
-		vector<print_expr>* values;
+		const vector<print_expr>* values;
 		friend class visitor;
 	public:
 		print_stmt(token _tok, vector<print_expr>* _values);
@@ -103,7 +103,7 @@ namespace ast{
 	
 	class read_stmt : public stmt{
 	private:
-		vector<variable*>* var_list;
+		const vector<variable*>* var_list;
 		friend class visitor;
 	public:
 		read_stmt(token _tok, vector<variable*>* _var_list);
@@ -113,7 +113,7 @@ namespace ast{
 	
 	class input_stmt : public stmt{
 	private:
-		vector<variable*>* var_list;
+		const vector<variable*>* var_list;
 		friend class visitor;
 	public:
 		input_stmt(token _tok, vector<variable*>* _var_list);
@@ -123,7 +123,7 @@ namespace ast{
 	
 	class data_stmt : public stmt{
 	private:
-		vector<expr*>* num_list;
+		const vector<expr*>* num_list;
 		friend class visitor;
 	public:
 		data_stmt(token _tok, vector<expr*>* _num_list);
@@ -133,7 +133,7 @@ namespace ast{
 	
 	class goto_stmt : public stmt{
 	private:
-		int target_line;
+		const int target_line;
 		friend class visitor;
 	public:
 		goto_stmt(token _tok, int _target_line);
@@ -142,8 +142,8 @@ namespace ast{
 	
 	class if_stmt : public stmt{
 	private:
-		expr* condition;
-		int target_line;
+		const expr* condition;
+		const int target_line;
 		friend class visitor;
 	public:
 		if_stmt(token _tok, expr* _condition, int _target_line);
@@ -153,7 +153,7 @@ namespace ast{
 	
 	class gosub_stmt : public stmt{
 	private:
-		int target_line;
+		const int target_line;
 		friend class visitor;
 	public:
 		gosub_stmt(token _tok, int _target_line);
@@ -170,9 +170,9 @@ namespace ast{
 	
 	class def_stmt : public stmt{
 	private:
-		string* name;
-		string* param;
-		expr* target;
+		const string* name;
+		const string* param;
+		const expr* target;
 		friend class visitor;
 	public:
 		def_stmt(token _tok, string* _name, string* _param, expr* _target);
@@ -182,7 +182,7 @@ namespace ast{
 	
 	class dim_stmt : public stmt{
 	private:
-		variable* var;
+		const variable* var;
 		friend class visitor;
 	public:
 		dim_stmt(token _tok, variable* _var);
@@ -192,7 +192,7 @@ namespace ast{
 	
 	class next_stmt : public stmt{
 	private:
-		variable* var;
+		const variable* var;
 		friend class visitor;
 	public:
 		next_stmt(token _tok, variable* _var);
@@ -202,10 +202,10 @@ namespace ast{
 	
 	class for_stmt : public stmt{
 	private:
-		variable* var;
-		expr* initial_value;
-		expr* condition;
-		expr* step;
+		const variable* var;
+		const expr* initial_value;
+		const expr* condition;
+		const expr* step;
 		friend class visitor;
 	public:
 		for_stmt(token _tok, variable* _var, expr* _initial_value, expr* _condition, expr* _step = nullptr);
@@ -225,7 +225,7 @@ namespace ast{
 	private:
 		friend class visitor;
 	protected:
-		token tok;
+		const token tok;
 		expr(token _tok);
 	public:
 		virtual ~expr() = 0;
@@ -234,8 +234,8 @@ namespace ast{
 
 	class binary_expr : public expr {
 	private:
-		expr* left;
-		expr* right;
+		const expr* left;
+		const expr* right;
 		friend class visitor;
 	public:
 		binary_expr(expr* _left, token _tok, expr* _right);
@@ -245,7 +245,7 @@ namespace ast{
 	
 	class unary_expr : public expr {
 	private:
-		expr* target;
+		const expr* target;
 		friend class visitor;
 	public:
 		unary_expr(token _tok, expr* _target);
@@ -255,8 +255,8 @@ namespace ast{
 	
 	class function_expr : public expr {
 	private:
-		string* name;
-		expr* param;
+		const string* name;
+		const expr* param;
 		friend class visitor;
 	public:
 		function_expr(token _tok, string* _name, expr* _param);
@@ -266,9 +266,9 @@ namespace ast{
 	
 	class variable : public expr {
 	private:
-		string* name;
-		expr* idx1;
-		expr* idx2;
+		const string* name;
+		const expr* idx1;
+		const expr* idx2;
 		friend class visitor;
 	public:
 		variable(token _tok, string* _name, expr* _idx1 = nullptr, expr* _idx2 = nullptr);
@@ -279,7 +279,7 @@ namespace ast{
 	template<class T>
 	class literal_expr : public expr {
 	private:
-		T value;
+		const T value;
 		friend class visitor;
 	public:
 		literal_expr(token _tok, T _value);
